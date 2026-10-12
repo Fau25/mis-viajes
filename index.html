@@ -64,7 +64,9 @@ h1,h2{margin:0;font-weight:500;letter-spacing:-.02em;text-wrap:balance}
 .cab-inicio h1{font-size:34px;line-height:1.05}
 .cab-inicio h1 .it{font-size:38px}
 .mazo{position:relative;height:360px;margin:76px 0;touch-action:none;user-select:none;-webkit-user-select:none}
-.carta{position:absolute;left:0;right:0;top:0;height:360px;padding:0;border:none;background:none;text-align:left;transform-origin:50% 50%;transition:transform .6s cubic-bezier(.2,.85,.2,1),opacity .45s ease;will-change:transform}
+.carta{position:absolute;left:0;right:0;top:0;height:360px;padding:0;border:none;background:none;text-align:left;-webkit-transform-origin:50% 50%;transform-origin:50% 50%;-webkit-transition:-webkit-transform .6s cubic-bezier(.2,.85,.2,1),opacity .45s ease;transition:transform .6s cubic-bezier(.2,.85,.2,1),opacity .45s ease;will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.mazo.arrastrando .carta{-webkit-transition:none;transition:none}
+.mazo .carta{touch-action:none}
 .carta .cuerpo{display:flex;flex-direction:column;justify-content:space-between;gap:16px;height:360px;border-radius:32px;padding:24px;position:relative;overflow:hidden;background:var(--c-fondo);color:var(--c-texto)}
 .carta .bola{position:absolute;right:-60px;top:80px;width:230px;height:230px;border-radius:50%;background:var(--c-bola)}
 .carta .chip{border-radius:var(--r);padding:8px 14px;font-size:13px;font-weight:500;background:var(--c-chip);color:var(--c-chip-t);white-space:nowrap}
@@ -445,22 +447,25 @@ function renderInicio(){
   h += '<div style="margin-top:16px;text-align:center"><button class="pild" style="border:none;color:var(--tinta-2)" data-a="copia">Copia de seguridad</button></div>';
   return h + '</div>';
 }
-function colocarMazo(){
+/* pos: posición del mazo; puede ser decimal mientras se arrastra con el dedo */
+function colocarMazo(pos){
+  if (typeof pos !== 'number') pos = S.activo;
   var cartas = document.querySelectorAll('.carta');
-  var ALTO = 360, AS = 22, n = cartas.length;
+  var ALTO = 360, AS = 22, n = cartas.length, lista = pendientes();
   cartas.forEach(function(c, i){
-    var o = i - S.activo, d = Math.abs(o);
+    var o = i - pos, d = Math.abs(o);
     var e = 1 - 0.08 * Math.min(d, 4), ty = 0;
     if (o < 0) ty = -(AS * d) - (ALTO / 2) * (1 - e);
     if (o > 0) ty = (AS * d) + (ALTO / 2) * (1 - e);
-    c.style.transform = 'translateY(' + ty.toFixed(1) + 'px) scale(' + e.toFixed(3) + ')';
-    c.style.zIndex = String(100 - d);
-    c.style.opacity = d <= 3 ? '1' : '0';
+    c.style.webkitTransform = c.style.transform = 'translate3d(0,' + ty.toFixed(1) + 'px,0) scale(' + e.toFixed(3) + ')';
+    c.style.zIndex = String(1000 - Math.round(d * 100));
+    c.style.opacity = d <= 3.2 ? '1' : '0';
     c.style.pointerEvents = d <= 3 ? 'auto' : 'none';
-    c.tabIndex = o === 0 ? 0 : -1;
-    var t = pendientes()[i];
-    c.setAttribute('aria-label', (o === 0 ? 'Abrir viaje: ' : 'Ir a ') + (t ? t.titulo : ''));
-    c.classList.toggle('activa', o === 0);
+    var activa = i === S.activo;
+    c.tabIndex = activa ? 0 : -1;
+    var t = lista[i];
+    c.setAttribute('aria-label', (activa ? 'Abrir viaje: ' : 'Ir a ') + (t ? t.titulo : ''));
+    c.classList.toggle('activa', activa);
   });
   var cont = $('#contador'); if (cont) cont.textContent = (S.activo + 1) + ' de ' + n + (n === 1 ? ' viaje' : ' viajes');
   var a = $('#b-ant'), b = $('#b-sig');
@@ -472,17 +477,59 @@ function mover(p){
   var nuevo = Math.max(0, Math.min(n - 1, S.activo + p));
   if (nuevo !== S.activo) { S.activo = nuevo; colocarMazo(); }
 }
-var gesto = {y: null, movido: false, rueda: 0};
+/* Arrastre: las tarjetas siguen al dedo (eventos táctiles, que Safari respeta) o al ratón */
+var gesto = {y: null, t: 0, dy: 0, movido: false, rueda: 0};
+var PASO = 150; /* píxeles de arrastre para pasar a la siguiente tarjeta */
+function posArrastre(dy){
+  var n = pendientes().length, p = S.activo - dy / PASO;
+  if (p < 0) p = p * 0.3;                       /* resistencia en los extremos */
+  if (p > n - 1) p = (n - 1) + (p - (n - 1)) * 0.3;
+  return p;
+}
+function empezarArrastre(y, m){
+  gesto.y = y; gesto.t = Date.now(); gesto.dy = 0; gesto.movido = false;
+  m.classList.add('arrastrando');
+}
+function moverArrastre(y){
+  if (gesto.y === null) return;
+  gesto.dy = y - gesto.y;
+  if (Math.abs(gesto.dy) > 6) gesto.movido = true;
+  colocarMazo(posArrastre(gesto.dy));
+}
+function soltarArrastre(m){
+  if (gesto.y === null) return;
+  m.classList.remove('arrastrando');
+  var dy = gesto.dy, vel = dy / Math.max(1, Date.now() - gesto.t); /* px por ms */
+  gesto.y = null;
+  var n = pendientes().length;
+  var destino = Math.round(posArrastre(dy));
+  if (destino === S.activo && Math.abs(vel) > 0.35 && Math.abs(dy) > 20) destino = S.activo + (dy < 0 ? 1 : -1);
+  S.activo = Math.max(0, Math.min(n - 1, destino));
+  colocarMazo();
+}
 function montarMazo(){
   var m = $('#mazo'); if (!m) return;
   colocarMazo();
-  m.addEventListener('pointerdown', function(e){ gesto.y = e.clientY; gesto.movido = false; });
-  m.addEventListener('pointerup', function(e){
+  m.addEventListener('touchstart', function(e){
+    if (e.touches.length !== 1) return;
+    empezarArrastre(e.touches[0].clientY, m);
+  }, {passive: true});
+  m.addEventListener('touchmove', function(e){
     if (gesto.y === null) return;
-    var dy = e.clientY - gesto.y; gesto.y = null;
-    if (Math.abs(dy) > 35) { gesto.movido = true; mover(dy < 0 ? 1 : -1); }
+    e.preventDefault();
+    moverArrastre(e.touches[0].clientY);
+  }, {passive: false});
+  m.addEventListener('touchend', function(){ soltarArrastre(m); });
+  m.addEventListener('touchcancel', function(){ soltarArrastre(m); });
+  m.addEventListener('mousedown', function(e){
+    if (e.button !== 0) return;
+    e.preventDefault();
+    empezarArrastre(e.clientY, m);
+    var mv = function(ev){ moverArrastre(ev.clientY); };
+    var up = function(){ window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); soltarArrastre(m); };
+    window.addEventListener('mousemove', mv);
+    window.addEventListener('mouseup', up);
   });
-  m.addEventListener('pointercancel', function(){ gesto.y = null; });
   m.addEventListener('wheel', function(e){
     e.preventDefault();
     var ahora = Date.now();
