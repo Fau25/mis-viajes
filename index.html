@@ -106,12 +106,21 @@ h1,h2{margin:0;font-weight:500;letter-spacing:-.02em;text-wrap:balance}
 .billete .vuelta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px 12px 20px}
 .subiendo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(19,33,42,.75);color:#fff;padding:10px 16px;border-radius:var(--r);font-size:14px}
 .menu{display:flex;gap:8px}
-.menu .pild{width:56px;padding:0}
+.menu{gap:6px}
+.menu .pild{width:52px;padding:0}
 .menu .pild.leer{width:auto;padding:0 16px;margin-left:auto;background:var(--naranja);border-color:var(--naranja);color:var(--tinta);font-weight:600}
 .alo{background:var(--papel);border-radius:22px;overflow:hidden}
-.alo-btn{width:100%;border:none;background:transparent;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;text-align:left}
 .alo-ic{width:40px;height:40px;flex-shrink:0;border-radius:14px;background:var(--agua);display:flex;align-items:center;justify-content:center}
-.alo-mapa{display:flex;gap:8px;align-items:center;padding:10px 16px 12px 68px;border-top:1px solid var(--linea-2);color:var(--tinta-2);font-size:14px;text-decoration:none}
+.alo-cab{display:flex;align-items:center;gap:12px;padding:14px 12px 10px 16px}
+.alo-nombre{flex:1;min-width:0;font-size:19px;font-weight:500;line-height:1.2;overflow-wrap:anywhere}
+.alo-datos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;padding:4px 16px 16px}
+.alo-datos b{display:block;font-size:16px;font-weight:500;margin-top:2px;overflow-wrap:anywhere}
+.etq-dato{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-2)}
+.copiar{display:flex;align-items:center;gap:6px;border:none;background:none;padding:0;text-align:left;color:var(--tinta);min-height:32px;max-width:100%}
+.copiar b{margin-top:0;min-width:0}
+.copiar svg{flex-shrink:0;color:var(--tinta-2)}
+.alo-mapa{display:flex;gap:10px;align-items:center;margin:0 10px 10px;padding:12px 14px;border-radius:var(--r);background:var(--agua);color:var(--tinta);font-size:15px;text-decoration:none}
+.alo-mapa .ir{display:flex;align-items:center;gap:4px;flex-shrink:0;font-size:13px;font-weight:600;color:var(--agua-2)}
 .leyendo{display:flex;flex-direction:column;align-items:center;gap:14px;padding:48px 8px}
 .giro{width:44px;height:44px;border-radius:50%;border:4px solid var(--agua);border-top-color:var(--naranja);animation:giro 1s linear infinite}
 @keyframes giro{to{transform:rotate(360deg)}}
@@ -238,6 +247,9 @@ var IC = {
 IC.doc = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
 IC.chispa = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg>';
 IC.cama = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V6M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.8"/></svg>';
+IC.casa = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></svg>';
+IC.copiar = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
+IC.flechaP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>';
 var CONSERJE = 'https://mis-viajes-ia.fgstrash.workers.dev';
 var LS_CLAVE_IA = 'mis-viajes-clave-ia';
 function claveIA(){ try { return localStorage.getItem(LS_CLAVE_IA) || ''; } catch (e) { return ''; } }
@@ -624,9 +636,13 @@ function renderViaje(){
   h += '</div></div>';
 
   h += '<div class="pad" style="display:flex;flex-direction:column;gap:16px;padding-top:20px">';
-  h += '<div class="menu"><button class="pild activa" aria-label="Plan" aria-pressed="true">' + IC.pin + '</button>' +
+  var enAlo = S.pestana === 'alojamiento';
+  h += '<div class="menu" role="tablist" aria-label="Secciones del viaje">' +
+       '<button class="pild' + (enAlo ? '' : ' activa') + '" role="tab" aria-selected="' + !enAlo + '" data-a="pestPlan" aria-label="Itinerario">' + IC.pin + '</button>' +
+       '<button class="pild' + (enAlo ? ' activa' : '') + '" role="tab" aria-selected="' + enAlo + '" data-a="pestAlo" aria-label="Alojamiento">' + IC.casa + '</button>' +
        '<button class="pild" data-a="maleta" aria-label="Maleta y tareas">' + IC.maleta + '</button>' +
        '<button class="pild leer" data-a="leerReserva">' + IC.chispa + 'Leer reserva</button></div>';
+  if (!enAlo) {
   var planes = (v.planes || []).slice().sort(function(x, y){ return x.dia - y.dia || (x.creado || 0) - (y.creado || 0); });
   var dias = {}; planes.forEach(function(p){ dias[p.dia] = true; });
   h += '<div class="seccion" style="margin-top:4px"><h2>Itinerario</h2>' + (planes.length ? '<span class="suave num" style="font-size:14px">' + Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan</span>' : '') + '</div>';
@@ -644,22 +660,28 @@ function renderViaje(){
   if (!planes.length) h += '<button class="boton b-tinta" data-a="nuevoPlan" style="height:52px">' + IC.mas + 'Añadir itinerario</button>';
   else h += '<button class="dash" data-a="nuevoPlan">' + IC.mas + 'Añadir plan</button>';
   h += '</div>';
+  } else {
   var alos = (v.alojamientos || []).slice().sort(function(x, y){ return (x.entrada || '') < (y.entrada || '') ? -1 : 1; });
   h += '<div class="seccion" style="margin-top:4px"><h2>Alojamiento</h2></div><div style="display:flex;flex-direction:column;gap:10px">';
   alos.forEach(function(a){
-    var fechas = (a.entrada ? corto(aFecha(a.entrada)) : '—') + ' — ' + (a.salida ? corto(aFecha(a.salida)) : '—');
-    var nn = a.entrada && a.salida ? noches(a.entrada, a.salida) : null;
-    h += '<div class="alo"><button class="alo-btn" data-a="editarAlo" data-id="' + esc(a.id) + '" aria-label="Editar alojamiento: ' + esc(a.nombre) + '">' +
-      '<span class="alo-ic" aria-hidden="true">' + IC.cama + '</span><span style="flex:1;min-width:0">' +
-      '<span class="lugar" style="display:block;font-size:18px;font-weight:500;overflow-wrap:anywhere">' + esc(a.nombre || 'Alojamiento') + '</span>' +
-      '<span class="suave num" style="display:block;font-size:14px;margin-top:2px">' + esc(fechas) + (nn !== null && nn >= 0 ? ' · ' + textoNoches(nn) : '') + (a.horaEntrada ? ' · entrada ' + esc(a.horaEntrada) : '') + '</span>' +
-      (a.codigo ? '<span class="suave" style="display:block;font-size:14px;margin-top:2px">Reserva: <b style="color:var(--tinta);font-weight:600;overflow-wrap:anywhere">' + esc(a.codigo) + '</b></span>' : '') +
-      (a.notas ? '<span class="desc" style="display:block;font-size:14px;color:var(--tinta-2);margin-top:3px;white-space:pre-line;overflow-wrap:anywhere">' + esc(a.notas) + '</span>' : '') +
-      '</span></button>' +
-      (a.direccion ? '<a class="alo-mapa" href="https://maps.apple.com/?q=' + encodeURIComponent(a.direccion) + '" target="_blank" rel="noopener">' + IC.pinP + '<span style="overflow-wrap:anywhere">' + esc(a.direccion) + '</span></a>' : '') +
+    var f = function(x){ return x ? fmt(aFecha(x), {weekday: 'short', day: 'numeric', month: 'short'}) : '—'; };
+    h += '<div class="alo">' +
+      '<div class="alo-cab"><span class="alo-ic" aria-hidden="true">' + IC.casa + '</span>' +
+      '<span class="alo-nombre">' + esc(a.nombre || 'Alojamiento') + '</span>' +
+      '<button class="circ peq" data-a="editarAlo" data-id="' + esc(a.id) + '" aria-label="Editar alojamiento">' + IC.lapiz + '</button></div>' +
+      '<div class="alo-datos">' +
+        '<div><span class="etq-dato">Llegada</span><b>' + esc(f(a.entrada)) + '</b></div>' +
+        '<div><span class="etq-dato">Salida</span><b>' + esc(f(a.salida)) + '</b></div>' +
+        '<div><span class="etq-dato">Check-in</span><b class="num">' + esc(a.horaEntrada ? 'desde las ' + a.horaEntrada : '—') + '</b></div>' +
+        '<div><span class="etq-dato">Nº de reserva</span>' + (a.codigo ? '<button class="copiar" data-a="copiar" data-t="' + esc(a.codigo) + '" aria-label="Copiar número de reserva ' + esc(a.codigo) + '"><b class="num">' + esc(a.codigo) + '</b>' + IC.copiar + '</button>' : '<b>—</b>') + '</div>' +
+      '</div>' +
+      (a.direccion ? '<a class="alo-mapa" href="https://www.google.com/maps/search/?api=1&amp;query=' + encodeURIComponent(a.direccion) + '" target="_blank" rel="noopener">' + IC.pin + '<span style="flex:1;min-width:0;overflow-wrap:anywhere">' + esc(a.direccion) + '</span><span class="ir">Google Maps ' + IC.flechaP + '</span></a>' : '') +
       '</div>';
   });
-  h += '<button class="dash" data-a="nuevoAlo">' + IC.mas + 'Añadir alojamiento</button></div>';
+  if (!alos.length) h += '<button class="boton b-tinta" data-a="nuevoAlo" style="height:52px">' + IC.mas + 'Añadir alojamiento</button>';
+  else h += '<button class="dash" data-a="nuevoAlo">' + IC.mas + 'Añadir otro alojamiento</button>';
+  h += '</div>';
+  }
   var c = conteoMaleta(v);
   var pm = c.tot ? Math.round(c.he / c.tot * 100) : 0, pt = c.tt ? Math.round(c.th / c.tt * 100) : 0;
   h += '<div class="progreso" style="margin-top:4px">' +
@@ -699,11 +721,10 @@ function hojaAlo(){
   };
   h += '<form data-f="alojamiento" style="display:flex;flex-direction:column;gap:14px" novalidate>' +
     c('nombre', 'Nombre', ' maxlength="80" placeholder="Ej. Hotel Gracery Shinjuku" required') +
-    c('direccion', 'Dirección', ' maxlength="160" placeholder="Calle, número, ciudad"') +
-    '<div class="dos">' + c('entrada', 'Entrada', '', 'date') + c('salida', 'Salida', '', 'date') +
-    c('horaEntrada', 'Hora de entrada', '', 'time') + c('horaSalida', 'Hora de salida', '', 'time') + '</div>' +
-    c('codigo', 'Código de reserva', ' maxlength="40"') +
-    '<label class="campo-et" for="a-notas">Notas<textarea class="campo" id="a-notas" name="notas" rows="3" maxlength="400" placeholder="Régimen, habitación, teléfono…">' + esc(a.notas || '') + '</textarea></label>' +
+    '<div class="dos">' + c('entrada', 'Llegada', '', 'date') + c('salida', 'Salida', '', 'date') + '</div>' +
+    c('horaEntrada', 'Check-in desde', '', 'time') +
+    c('codigo', 'Nº de reserva', ' maxlength="40" inputmode="text"') +
+    c('direccion', 'Ubicación', ' maxlength="160" placeholder="Dirección del alojamiento"') +
     '<p id="f-error" style="margin:0;color:var(--rojo)" hidden></p>' +
     '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar</button></div></form>';
   if (a.id) h += '<button class="boton b-texto" data-a="borrarAlo">' + IC.basura + 'Eliminar alojamiento</button>';
@@ -839,6 +860,13 @@ var acciones = {
     S.leerDesde = S.hoja && S.hoja.tipo === 'nuevo' ? 'nuevo' : (S.vista === 'viaje' ? 'viaje' : 'nuevo');
     var i = $('#reserva'); i.value = ''; i.click();
   },
+  pestPlan: function(){ S.pestana = 'plan'; render(); },
+  pestAlo: function(){ S.pestana = 'alojamiento'; render(); },
+  copiar: function(el){
+    var t = el.dataset.t;
+    var ok = function(){ toast('Número de reserva copiado'); };
+    try { navigator.clipboard.writeText(t).then(ok, function(){ toast(t); }); } catch (e) { toast(t); }
+  },
   nuevoAlo: function(){ var v = viaje(); abrirHoja({tipo: 'alojamiento', alo: {entrada: v.inicio, salida: v.fin}}); },
   editarAlo: function(el){
     var a = (viaje().alojamientos || []).filter(function(x){ return x.id === el.dataset.id; })[0];
@@ -854,7 +882,7 @@ var acciones = {
   carta: function(el){
     if (gesto.movido) { gesto.movido = false; return; }
     var i = +el.dataset.i;
-    if (i === S.activo) irA('viaje', {viajeId: pendientes()[i].id});
+    if (i === S.activo) irA('viaje', {viajeId: pendientes()[i].id, pestana: 'plan'});
     else { S.activo = i; colocarMazo(); }
   },
   borrarActivo: function(el){
@@ -876,7 +904,7 @@ var acciones = {
   anterior: function(){ mover(-1); },
   siguiente: function(){ mover(1); },
   verPasados: function(){ irA('pasados'); },
-  abrir: function(el){ irA('viaje', {viajeId: el.dataset.id}); },
+  abrir: function(el){ irA('viaje', {viajeId: el.dataset.id, pestana: 'plan'}); },
   inicio: function(){ irA('inicio'); },
   cerrar: cerrarHoja,
   datos: function(){ abrirHoja({tipo: 'datos'}); },
@@ -997,9 +1025,9 @@ app.addEventListener('submit', function(e){
     var ent = val('entrada'), sal = val('salida');
     if (ent && sal && sal < ent) return error('La salida no puede ser antes que la entrada.');
     var v4 = clone(viaje()), a0 = S.hoja.alo || {};
-    var alo = {id: a0.id || nuevoId('a'), nombre: nombre, direccion: val('direccion'), entrada: ent, salida: sal, horaEntrada: val('horaEntrada'), horaSalida: val('horaSalida'), codigo: val('codigo'), notas: val('notas')};
+    var alo = Object.assign({}, a0, {id: a0.id || nuevoId('a'), nombre: nombre, direccion: val('direccion'), entrada: ent, salida: sal, horaEntrada: val('horaEntrada'), codigo: val('codigo')});
     v4.alojamientos = (v4.alojamientos || []).filter(function(x){ return x.id !== alo.id; }).concat([alo]);
-    guardar(v4); cerrarHoja();
+    guardar(v4); S.pestana = 'alojamiento'; cerrarHoja();
   } else if (tipo === 'claveia') {
     var clave = String(fd.get('clave') || '').trim();
     if (!clave) return;
