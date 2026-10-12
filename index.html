@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mis viajes</title>
+<meta name="description" content="Organizador personal de viajes">
+<meta name="theme-color" content="#F1F4F1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mis viajes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Layout: una sola columna de móvil (máx. 430px) centrada; cada pantalla o formulario sustituye a la anterior, sin capas flotantes */
+:root{
+  --suelo:#F1F4F1; --papel:#FFFFFF; --tinta:#13212A; --tinta-2:#55646B; --tinta-3:#7A888D;
+  --linea:#C9D3D0; --linea-2:#E8EEEB; --naranja:#F07F2E; --naranja-2:#F6A566; --melocoton:#FCE6D3;
+  --agua:#D6E6E4; --agua-2:#3E4F55; --agua-linea:#C3D6D3; --noche-2:#B9C6CB; --noche-3:#2E3F48; --rojo:#A23B2A;
+  --sans:'Instrument Sans',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --serif:'Instrument Serif',Georgia,'Times New Roman',serif;
+  --r:18px;
+  color-scheme:light;
+}
+html,body{background:var(--suelo);color:var(--tinta)}
+html{color-scheme:light}
+body{margin:0;font-family:var(--sans);font-size:16px;-webkit-text-size-adjust:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+button,label,a{touch-action:manipulation}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.mazo:focus-visible{outline:2px solid var(--naranja);outline-offset:2px}
+h1,h2{margin:0;font-weight:500;letter-spacing:-.02em;text-wrap:balance}
+.it{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:0}
+.app{max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+.pad{padding:24px 20px 40px}
+.fila{display:flex;align-items:center;gap:12px}
+.entre{justify-content:space-between}
+.circ{width:48px;height:48px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--tinta);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--tinta)}
+.circ.lleno{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
+.circ.peq{width:44px;height:44px}
+.circ.vidrio{border-color:rgba(255,255,255,.85);background:rgba(19,33,42,.25);color:#fff}
+.pild{height:44px;padding:0 18px;border-radius:var(--r);border:1.5px solid var(--linea);background:transparent;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px}
+.pild.activa{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
+.boton{height:50px;border-radius:var(--r);border:none;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.b-naranja{background:var(--naranja);color:var(--tinta)}
+.b-tinta{background:var(--tinta);color:var(--papel)}
+.b-borde{background:transparent;border:1.5px solid var(--tinta);color:var(--tinta);font-weight:500}
+.b-texto{background:transparent;color:var(--rojo);font-weight:500;height:44px}
+.boton:disabled{opacity:.45;cursor:default}
+.dash{height:52px;border-radius:var(--r);border:1.5px dashed #AEBBB7;background:transparent;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:500;width:100%}
+.etiq{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.suave{color:var(--tinta-2)}
+.num{font-variant-numeric:tabular-nums}
+
+/* Inicio */
+.cab-inicio{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.cab-inicio h1{font-size:34px;line-height:1.05}
+.cab-inicio h1 .it{font-size:38px}
+.mazo{position:relative;height:360px;margin:76px 0;touch-action:none;user-select:none;-webkit-user-select:none}
+.carta{position:absolute;left:0;right:0;top:0;height:360px;padding:0;border:none;background:none;text-align:left;transform-origin:50% 50%;transition:transform .6s cubic-bezier(.2,.85,.2,1),opacity .45s ease;will-change:transform}
+.carta .cuerpo{display:flex;flex-direction:column;justify-content:space-between;gap:16px;height:360px;border-radius:32px;padding:24px;position:relative;overflow:hidden;background:var(--c-fondo);color:var(--c-texto)}
+.carta .bola{position:absolute;right:-60px;top:80px;width:230px;height:230px;border-radius:50%;background:var(--c-bola)}
+.carta .chip{border-radius:var(--r);padding:8px 14px;font-size:13px;font-weight:500;background:var(--c-chip);color:var(--c-chip-t);white-space:nowrap}
+.carta .flecha{width:56px;height:56px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--c-chip);color:var(--c-chip-t)}
+.carta .titulo{line-height:.95;letter-spacing:-.04em;overflow-wrap:anywhere;display:block}
+.carta.activa .titular{animation:entra .5s cubic-bezier(.2,.85,.2,1) both}
+.t0{--c-fondo:var(--naranja);--c-texto:var(--tinta);--c-bola:var(--naranja-2);--c-chip:var(--tinta);--c-chip-t:#fff}
+.t1{--c-fondo:var(--tinta);--c-texto:#fff;--c-bola:#22343F;--c-chip:var(--naranja);--c-chip-t:var(--tinta)}
+.t2{--c-fondo:var(--agua);--c-texto:var(--tinta);--c-bola:var(--agua-linea);--c-chip:var(--tinta);--c-chip-t:#fff}
+@keyframes entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.vacio{margin-top:28px;background:var(--papel);border-radius:28px;padding:28px 24px;display:flex;flex-direction:column;gap:12px}
+.vacio h2{font-size:26px}
+.pasados{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.fila-pasado{width:100%;border:none;background:var(--papel);border-radius:22px;padding:14px 18px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+/* Ficha */
+.cabecera{position:relative;overflow:hidden;border-radius:0 0 32px 32px;background:#2F4B53;display:flex;flex-direction:column;justify-content:flex-end;padding:112px 16px 16px;color:#fff}
+.cabecera .fondo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cabecera .velo{position:absolute;inset:0;background:linear-gradient(rgba(12,22,28,.35),rgba(12,22,28,.15) 40%,rgba(12,22,28,.45))}
+.cabecera .barra{position:absolute;left:20px;right:20px;top:20px;display:flex;justify-content:space-between;align-items:center}
+.cabecera .contenido{position:relative;display:flex;flex-direction:column;gap:16px}
+.cab-titulo{padding:0 4px 0 8px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.cab-titulo .t1x{font-size:36px;font-weight:500;letter-spacing:-.02em;line-height:1.05;overflow-wrap:anywhere}
+.cab-titulo .t2x{font-family:var(--serif);font-style:italic;font-size:40px;line-height:1.05;overflow-wrap:anywhere}
+.cab-titulo .t3x{font-size:17px;margin-top:8px}
+.vidrio{background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);border:1px solid rgba(255,255,255,.4)}
+.btn-transporte{align-self:flex-start;margin-left:8px;height:44px;padding:0 16px;border-radius:var(--r);color:#fff;display:flex;align-items:center;gap:8px}
+.billete{border-radius:28px;overflow:hidden}
+.billete .ida{background:var(--tinta);color:#fff;padding:18px 20px 20px;border-radius:24px;margin:5px}
+.billete .cod{font-size:40px;font-weight:500;letter-spacing:-.02em;line-height:1}
+.billete .ciudad{font-size:13px;color:var(--noche-2);margin-top:4px}
+.billete .datos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;font-size:12px;color:var(--noche-2)}
+.billete .datos b{display:block;font-size:16px;font-weight:400;color:#fff;margin-top:2px;overflow-wrap:anywhere}
+.billete .icono-t{width:48px;height:32px;flex-shrink:0;border-radius:var(--r);background:var(--naranja);color:var(--tinta);display:flex;align-items:center;justify-content:center}
+.billete .vuelta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px 12px 20px}
+.subiendo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(19,33,42,.75);color:#fff;padding:10px 16px;border-radius:var(--r);font-size:14px}
+.menu{display:flex;gap:8px}
+.menu .pild{width:56px;padding:0}
+.seccion{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.seccion h2{font-size:24px}
+.plan{width:100%;border:none;background:var(--papel);border-radius:22px;padding:14px 14px 14px 18px;display:flex;gap:12px;align-items:flex-start;text-align:left}
+.plan .txt{flex:1;min-width:0}
+.plan .lugar{display:block;font-size:18px;font-weight:500;margin-top:2px;overflow-wrap:anywhere}
+.plan .desc{display:block;font-size:14px;color:var(--tinta-2);margin-top:3px;white-space:pre-line;overflow-wrap:anywhere}
+.plan .llegada{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--melocoton);border-radius:var(--r);padding:6px 12px;font-size:13px;font-weight:500}
+.fecha-dia{flex-shrink:0;min-width:52px;background:var(--tinta);color:#fff;border-radius:16px;padding:6px 8px;text-align:center}
+.fecha-dia span{display:block}
+.fecha-dia .s{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--noche-2)}
+.fecha-dia .n{font-size:22px;font-weight:500;line-height:1.05}
+.fecha-dia .m{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--naranja-2)}
+.progreso{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.prog{border:none;background:var(--papel);border-radius:22px;padding:16px 18px;text-align:left;display:block;width:100%}
+.prog .grande{display:block;font-size:26px;font-weight:500;margin-top:2px}
+.barra-p{display:block;height:6px;border-radius:3px;background:#E3EAE7;margin-top:10px;overflow:hidden}
+.barra-p i{display:block;height:6px;border-radius:3px}
+
+/* Hojas (formularios y maleta) */
+.hoja-fondo{background:var(--tinta);padding-top:20px;min-height:100vh}
+.hoja{background:var(--suelo);border-radius:28px 28px 0 0;min-height:calc(100vh - 20px);padding:20px 20px 40px;display:flex;flex-direction:column;gap:14px}
+.hoja-cab{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--suelo);margin:-20px -20px 0;padding:20px 20px 8px;border-radius:28px 28px 0 0}
+.hoja-cab h2{font-size:26px}
+.campo-et{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;min-width:0}
+.campo{width:100%;height:48px;border-radius:var(--r);border:1.5px solid var(--linea);background:var(--papel);color:var(--tinta);font:inherit;font-size:16px;padding:0 14px;-webkit-appearance:none;appearance:none}
+textarea.campo{height:auto;padding:12px 14px;resize:none}
+select.campo{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2313212A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:40px}
+input[type=date].campo,input[type=time].campo{min-width:0;line-height:44px}
+.campo:focus{outline:none;border-color:var(--tinta)}
+.dos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dato{background:var(--papel);border-radius:var(--r);padding:12px 14px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.acciones{display:flex;gap:10px;margin-top:4px}
+.bloque-t{background:var(--papel);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.segm{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.segm input{position:absolute;opacity:0;width:1px;height:1px}
+.segm label{height:44px;border-radius:var(--r);border:1.5px solid var(--linea);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer}
+.segm input:checked+label{background:var(--tinta);color:#fff;border-color:var(--tinta);font-weight:500}
+.segm input:focus-visible+label{outline:2px solid var(--naranja);outline-offset:2px}
+
+/* Maleta */
+.resumen-m{background:var(--tinta);color:#fff;border-radius:24px;padding:18px 20px}
+.resumen-m .grande{font-size:40px;font-weight:500;letter-spacing:-.02em;margin-top:4px;line-height:1}
+.grupo{background:var(--papel);border-radius:22px;overflow:hidden}
+.grupo.agua{background:var(--agua)}
+.grupo-cab{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:4px 16px 4px 18px;border:none;background:transparent;text-align:left}
+.grupo-cab .nom{flex:1;font-size:18px;font-weight:500}
+.grupo-lista{border-top:1px solid var(--linea-2);padding:2px 6px 4px}
+.grupo.agua .grupo-lista{border-top-color:var(--agua-linea)}
+.item{display:flex;align-items:center;min-height:40px;padding:0 2px 0 12px}
+.item label{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:40px;cursor:pointer}
+.item .txt{overflow-wrap:anywhere}
+.item.hecho .txt{color:var(--tinta-2);text-decoration:line-through}
+.chk{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin:0;flex-shrink:0;border-radius:50%;border:1.6px solid var(--tinta);background:transparent center/14px no-repeat;cursor:pointer}
+.chk:checked{background-color:var(--tinta);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.quitar{width:40px;height:40px;flex-shrink:0;border:none;border-radius:50%;background:transparent;color:var(--tinta-3);display:flex;align-items:center;justify-content:center}
+.anadir{display:flex;align-items:center;gap:12px;width:100%;min-height:42px;padding:2px 12px;border:none;background:transparent;color:var(--tinta-2);font-size:15px;text-align:left}
+.anadir-form{display:flex;gap:8px;align-items:center;padding:6px}
+.anadir-form .campo{flex:1;height:44px}
+
+.aviso{font-size:13px;color:var(--tinta-2);text-align:center;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tinta);color:#fff;padding:12px 18px;border-radius:var(--r);font-size:14px;z-index:99;max-width:calc(100% - 32px)}
+.cargando{min-height:60vh;display:flex;align-items:center;justify-content:center;color:var(--tinta-2)}
+@media (prefers-reduced-motion:reduce){.carta{transition:none}.carta.activa .titular{animation:none}}
+</style>
+
+</head>
+<body>
+<div class="app" id="app"><div class="cargando">Cargando tus viajes…</div></div>
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="importar" accept="application/json,.json" hidden>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- utilidades ---------- */
+var $ = function(s, r){ return (r || document).querySelector(s); };
+var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+var clone = function(x){ return JSON.parse(JSON.stringify(x)); };
+var nuevoId = function(p){ return (p || 'v') + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
+function iso(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function hoy(){ return iso(new Date()); }
+function aFecha(s){ var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function noches(a, b){ return Math.round((aFecha(b) - aFecha(a)) / 864e5); }
+function sinPunto(t){ return t.replace(/\./g, ''); }
+function fmt(d, o){ return sinPunto(d.toLocaleDateString('es-ES', o)); }
+function corto(d){ return fmt(d, {day: 'numeric', month: 'short'}); }
+function textoNoches(n){ return n === 1 ? '1 noche' : n + ' noches'; }
+function rango(t){ var a = aFecha(t.inicio), b = aFecha(t.fin); return corto(a) + ' — ' + corto(b) + ' ' + b.getFullYear(); }
+function diaFecha(t, n){ var a = aFecha(t.inicio); return new Date(a.getFullYear(), a.getMonth(), a.getDate() + n - 1); }
+function duracionTexto(a, b){
+  if (!a || !b) return '—';
+  var n = noches(a, b);
+  if (n < 0) return 'La vuelta es antes que la ida';
+  return (n + 1) + (n === 0 ? ' día' : ' días') + ' · ' + textoNoches(n);
+}
+
+var IC = {
+  mas: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  masP: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  xP: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  atras: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  flecha: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  arriba: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  abajo: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  lapiz: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  camara: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  coche: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16v-3.5L5 8a2 2 0 0 1 1.8-1.2h10.4A2 2 0 0 1 19 8l2 4.5V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3.5 12.5h17"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
+  pin: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.7-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/></svg>',
+  pinP: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg>',
+  maleta: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="7" width="16" height="13" rx="2.5"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M9 11v5M15 11v5"/></svg>',
+  basura: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg>',
+  chevA: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
+  chevB: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  avion: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 13.5 21 6l-4 12-5-4-3 4v-5.5"/></svg>',
+  tren: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zM5 10h14M9 21l1.5-4M15 21l-1.5-4"/></svg>',
+  bus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v12H4V5a2 2 0 0 1 2-2zM4 11h16M7.5 17v3M16.5 17v3"/></svg>'
+};
+var TIPOS = {
+  avion: {nombre: 'Avión', numero: 'Vuelo', etNumero: 'Nº de vuelo', compania: 'Aerolínea'},
+  tren: {nombre: 'Tren', numero: 'Tren', etNumero: 'Nº de tren', compania: 'Compañía'},
+  bus: {nombre: 'Bus', numero: 'Bus', etNumero: 'Nº de bus', compania: 'Compañía'}
+};
+
+function maletaBase(){
+  return {
+    grupos: [
+      {nombre: 'Documentos', items: ['Pasaporte / DNI', 'Tarjetas de embarque', 'Seguro de viaje', 'Copia de documentos importantes']},
+      {nombre: 'Ropa', items: ['Camisetas', 'Pantalones', 'Calcetines', 'Ropa interior', 'Pijama', 'Zapatos']},
+      {nombre: 'Aseo', items: ['Cepillo y pasta de dientes', 'Champú y gel', 'Desodorante', 'Crema solar']},
+      {nombre: 'Salud', items: ['Medicamentos', 'Botiquín básico']},
+      {nombre: 'Electrónica', items: ['Móvil y cargador', 'Power bank', 'Adaptador de enchufe', 'Auriculares']},
+      {nombre: 'Dinero', items: ['Cartera', 'Tarjeta de crédito', 'Efectivo']},
+      {nombre: 'Entretenimiento', items: ['Libro']}
+    ],
+    tareas: ['Cerrar con llave las puertas', 'Desconectar los aparatos electrónicos', 'Vaciar la nevera y la basura', 'Cerrar el agua', 'Avisar a los vecinos'],
+    marcados: {}
+  };
+}
+
+/* ---------- estado ---------- */
+var S = {
+  cargado: false, viajes: [], vista: 'inicio', viajeId: null, activo: 0,
+  hoja: null, cerrados: {}, anadiendo: null, borrador: '', subiendo: false,
+  confirmar: false, pendienteRender: false
+};
+var db = null, assets = null, modoLocal = false;
+var LS = 'organizador-viajes-v1';
+
+function viaje(id){ for (var i = 0; i < S.viajes.length; i++) if (S.viajes[i].id === (id || S.viajeId)) return S.viajes[i]; return null; }
+function ordenInicio(a, b){ return a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : (a.creado || 0) - (b.creado || 0); }
+function pendientes(){ var h = hoy(); return S.viajes.filter(function(v){ return v.fin >= h; }).sort(ordenInicio); }
+function pasados(){ var h = hoy(); return S.viajes.filter(function(v){ return v.fin < h; }).sort(function(a, b){ return -ordenInicio(a, b); }); }
+
+/* ---------- guardado ---------- */
+function toast(t){
+  var el = $('#toast'); el.textContent = t; el.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ el.hidden = true; }, 3200);
+}
+/* Almacén en el propio dispositivo: IndexedDB (viajes y fotos), con localStorage como respaldo */
+var BD = null;
+function abrirBD(){
+  return new Promise(function(ok){
+    try {
+      var r = indexedDB.open('mis-viajes', 1);
+      r.onupgradeneeded = function(){ var d = r.result; d.createObjectStore('viajes', {keyPath: 'id'}); d.createObjectStore('fotos'); };
+      r.onsuccess = function(){ ok(r.result); };
+      r.onerror = function(){ ok(null); };
+      r.onblocked = function(){ ok(null); };
+    } catch (e) { ok(null); }
+  });
+}
+function tx(almacen, modo, fn){
+  return new Promise(function(ok, ko){
+    if (!BD) return ko(new Error('sin-bd'));
+    var t = BD.transaction(almacen, modo), st = t.objectStore(almacen), res;
+    var r = fn(st); if (r) r.onsuccess = function(){ res = r.result; };
+    t.oncomplete = function(){ ok(res); };
+    t.onerror = t.onabort = function(){ ko(t.error || new Error('tx')); };
+  });
+}
+function guardarLocal(){ try { localStorage.setItem(LS, JSON.stringify(S.viajes)); } catch (e) {} }
+function avisoGuardado(){ toast('No se pudo guardar. Libera espacio en el iPhone y vuelve a intentarlo.'); }
+function guardar(v){
+  v.actualizado = Date.now();
+  var i = S.viajes.findIndex(function(x){ return x.id === v.id; });
+  if (i < 0) S.viajes.push(v); else S.viajes[i] = v;
+  if (BD) tx('viajes', 'readwrite', function(st){ return st.put(clone(v)); }).catch(avisoGuardado);
+  else guardarLocal();
+}
+function borrarViaje(v){
+  S.viajes = S.viajes.filter(function(x){ return x.id !== v.id; });
+  if (BD) tx('viajes', 'readwrite', function(st){ return st.delete(v.id); }).catch(function(){});
+  else guardarLocal();
+  if (v.fotoId) assets.delete(v.fotoId).catch(function(){});
+}
+var urlsFoto = {}, cargandoFoto = {};
+assets = {
+  upload: function(blob){
+    var id = nuevoId('f');
+    return tx('fotos', 'readwrite', function(st){ return st.put(blob, id); }).then(function(){ urlsFoto[id] = URL.createObjectURL(blob); return {id: id}; });
+  },
+  delete: function(id){
+    if (urlsFoto[id]) { URL.revokeObjectURL(urlsFoto[id]); delete urlsFoto[id]; }
+    return tx('fotos', 'readwrite', function(st){ return st.delete(id); });
+  },
+  leer: function(id){ return tx('fotos', 'readonly', function(st){ return st.get(id); }); }
+};
+function fotoUrl(id){
+  if (!id) return null;
+  if (urlsFoto[id]) return urlsFoto[id];
+  if (!cargandoFoto[id] && BD) {
+    cargandoFoto[id] = true;
+    assets.leer(id).then(function(b){ if (b) { urlsFoto[id] = URL.createObjectURL(b); if (!S.hoja) render(); } }).catch(function(){});
+  }
+  return null;
+}
+async function iniciar(){
+  BD = await abrirBD();
+  if (!BD) { modoLocal = true; assets = null; }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  try {
+    if (BD) {
+      S.viajes = (await tx('viajes', 'readonly', function(st){ return st.getAll(); })) || [];
+      if (!S.viajes.length) {
+        var viejos = JSON.parse(localStorage.getItem(LS) || '[]') || [];
+        for (var i = 0; i < viejos.length; i++) guardar(viejos[i]);
+      }
+    } else {
+      S.viajes = JSON.parse(localStorage.getItem(LS) || '[]') || [];
+    }
+  } catch (e) { S.viajes = S.viajes || []; }
+  S.cargado = true; render();
+}
+
+/* Copia de seguridad */
+function blobADataUrl(b){ return new Promise(function(ok){ var r = new FileReader(); r.onload = function(){ ok(r.result); }; r.onerror = function(){ ok(null); }; r.readAsDataURL(b); }); }
+async function exportar(){
+  try {
+    var fotos = {};
+    for (var i = 0; i < S.viajes.length; i++) {
+      var id = S.viajes[i].fotoId;
+      if (id && assets) { var b = await assets.leer(id); if (b) fotos[id] = await blobADataUrl(b); }
+    }
+    var json = JSON.stringify({app: 'mis-viajes', version: 1, fecha: new Date().toISOString(), viajes: S.viajes, fotos: fotos});
+    var nombre = 'mis-viajes-' + hoy() + '.json';
+    var archivo = new File([json], nombre, {type: 'application/json'});
+    if (navigator.canShare && navigator.canShare({files: [archivo]})) {
+      await navigator.share({files: [archivo], title: 'Copia de Mis viajes'});
+    } else {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(archivo); a.download = nombre;
+      document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    }
+  } catch (e) {
+    if (!e || e.name !== 'AbortError') toast('No se pudo crear la copia. Vuelve a intentarlo.');
+  }
+}
+async function importar(file){
+  try {
+    var datos = JSON.parse(await file.text());
+    if (!datos || datos.app !== 'mis-viajes' || !Array.isArray(datos.viajes)) throw new Error('formato');
+    var fotos = datos.fotos || {};
+    for (var id in fotos) {
+      if (!fotos[id] || !assets) continue;
+      var blob = await (await fetch(fotos[id])).blob();
+      await tx('fotos', 'readwrite', function(st){ return st.put(blob, id); });
+    }
+    datos.viajes.forEach(function(v){ if (v && v.id && v.titulo && v.inicio && v.fin) guardar(v); });
+    cerrarHoja(); toast('Copia restaurada: ' + datos.viajes.length + (datos.viajes.length === 1 ? ' viaje' : ' viajes'));
+  } catch (e) {
+    toast('Ese archivo no es una copia de Mis viajes.');
+  }
+}
+
+/* ---------- navegación ---------- */
+function irA(vista, extra){
+  S.vista = vista; S.hoja = null; S.anadiendo = null; S.confirmar = false;
+  if (extra) for (var k in extra) S[k] = extra[k];
+  render(); try { window.scrollTo(0, 0); } catch (e) {}
+}
+function abrirHoja(h){ S.hoja = h; S.confirmar = false; render(); try { window.scrollTo(0, 0); } catch (e) {} }
+function cerrarHoja(){
+  S.hoja = null; S.anadiendo = null; S.borrador = ''; S.confirmar = false; S.pendienteRender = false;
+  render(); try { window.scrollTo(0, 0); } catch (e) {}
+}
+
+/* ---------- render ---------- */
+function render(){
+  var app = $('#app');
+  if (!S.cargado) { app.innerHTML = '<div class="cargando">Cargando tus viajes…</div>'; return; }
+  if (S.vista !== 'inicio' && S.vista !== 'pasados' && !viaje()) { S.vista = 'inicio'; S.hoja = null; }
+  if (S.hoja) app.innerHTML = renderHoja();
+  else if (S.vista === 'viaje') app.innerHTML = renderViaje();
+  else if (S.vista === 'pasados') app.innerHTML = renderPasados();
+  else app.innerHTML = renderInicio();
+  if (!S.hoja && S.vista === 'inicio') montarMazo();
+  if (S.anadiendo) { var inp = $('#nuevo-item'); if (inp) { inp.value = S.borrador; inp.focus(); } }
+}
+
+/* Inicio */
+function etiquetaCuenta(v){
+  var h = hoy();
+  if (v.inicio <= h) return 'En curso';
+  var n = noches(h, v.inicio);
+  return n === 1 ? 'Mañana' : 'Faltan ' + n + ' días';
+}
+function renderInicio(){
+  var lista = pendientes();
+  if (S.activo > lista.length - 1) S.activo = Math.max(0, lista.length - 1);
+  var h = '<div class="pad">';
+  h += '<div class="cab-inicio"><h1>Mis viajes,<br><span class="it">por delante</span></h1>' +
+       '<button class="circ lleno" data-a="nuevo" aria-label="Nuevo viaje">' + IC.mas + '</button></div>';
+  if (!lista.length) {
+    h += '<div class="vacio"><span class="etiq suave">Sin viajes pendientes</span>' +
+         '<h2>¿A dónde vas <span class="it">ahora</span>?</h2>' +
+         '<p class="suave" style="margin:0;line-height:1.45">Crea tu próximo viaje con su título y fechas. Después podrás añadir el transporte, el itinerario y la maleta.</p>' +
+         '<button class="boton b-tinta" data-a="nuevo" style="margin-top:6px">' + IC.mas + 'Crear viaje</button></div>';
+  } else {
+    h += '<div class="mazo" id="mazo" tabindex="0" role="region" aria-roledescription="carrusel" aria-label="Tus viajes. Desliza o usa las flechas para cambiar.">';
+    lista.forEach(function(v, i){
+      var len = v.titulo.length;
+      var tam = len <= 6 ? 92 : len <= 9 ? 68 : 48;
+      h += '<button class="carta t' + (i % 3) + '" data-a="carta" data-i="' + i + '">' +
+        '<span class="cuerpo"><span class="bola" aria-hidden="true"></span>' +
+        '<span class="fila entre" style="position:relative"><span class="etiq">' + esc(i === 0 ? 'Próximo · ' + etiquetaCuenta(v) : etiquetaCuenta(v)) + '</span>' +
+        '<span class="chip num">' + textoNoches(noches(v.inicio, v.fin)) + '</span></span>' +
+        '<span class="titular" style="position:relative;min-width:0;display:block"><span style="display:block;font-size:15px;font-weight:500;overflow-wrap:anywhere">' + esc(v.subtitulo) + '</span>' +
+        '<span class="titulo" style="font-size:' + tam + 'px">' + esc(v.titulo) + '</span></span>' +
+        '<span class="fila entre" style="position:relative;align-items:flex-end"><span><span style="display:block;font-size:13px">Fechas</span><span class="num" style="display:block;font-size:20px;font-weight:500">' + esc(rango(v)) + '</span></span>' +
+        '<span class="flecha" aria-hidden="true">' + IC.flecha + '</span></span></span></button>';
+    });
+    h += '</div>';
+    h += '<div class="fila entre"><span class="suave num" id="contador" aria-live="polite"></span><span class="fila" style="gap:8px">' +
+         '<button class="circ" data-a="anterior" id="b-ant" aria-label="Viaje anterior">' + IC.arriba + '</button>' +
+         '<button class="circ" data-a="siguiente" id="b-sig" aria-label="Viaje siguiente">' + IC.abajo + '</button></span></div>';
+  }
+  var p = pasados();
+  if (p.length) h += '<div style="margin-top:28px;text-align:center"><button class="pild" data-a="verPasados">Viajes pasados · ' + p.length + '</button></div>';
+  h += '<div style="margin-top:16px;text-align:center"><button class="pild" style="border:none;color:var(--tinta-2)" data-a="copia">Copia de seguridad</button></div>';
+  return h + '</div>';
+}
+function colocarMazo(){
+  var cartas = document.querySelectorAll('.carta');
+  var ALTO = 360, AS = 22, n = cartas.length;
+  cartas.forEach(function(c, i){
+    var o = i - S.activo, d = Math.abs(o);
+    var e = 1 - 0.08 * Math.min(d, 4), ty = 0;
+    if (o < 0) ty = -(AS * d) - (ALTO / 2) * (1 - e);
+    if (o > 0) ty = (AS * d) + (ALTO / 2) * (1 - e);
+    c.style.transform = 'translateY(' + ty.toFixed(1) + 'px) scale(' + e.toFixed(3) + ')';
+    c.style.zIndex = String(100 - d);
+    c.style.opacity = d <= 3 ? '1' : '0';
+    c.style.pointerEvents = d <= 3 ? 'auto' : 'none';
+    c.tabIndex = o === 0 ? 0 : -1;
+    var t = pendientes()[i];
+    c.setAttribute('aria-label', (o === 0 ? 'Abrir viaje: ' : 'Ir a ') + (t ? t.titulo : ''));
+    c.classList.toggle('activa', o === 0);
+  });
+  var cont = $('#contador'); if (cont) cont.textContent = (S.activo + 1) + ' de ' + n + (n === 1 ? ' viaje' : ' viajes');
+  var a = $('#b-ant'), b = $('#b-sig');
+  if (a) { a.disabled = S.activo <= 0; a.style.opacity = a.disabled ? '.35' : '1'; }
+  if (b) { b.disabled = S.activo >= n - 1; b.style.opacity = b.disabled ? '.35' : '1'; }
+}
+function mover(p){
+  var n = pendientes().length;
+  var nuevo = Math.max(0, Math.min(n - 1, S.activo + p));
+  if (nuevo !== S.activo) { S.activo = nuevo; colocarMazo(); }
+}
+var gesto = {y: null, movido: false, rueda: 0};
+function montarMazo(){
+  var m = $('#mazo'); if (!m) return;
+  colocarMazo();
+  m.addEventListener('pointerdown', function(e){ gesto.y = e.clientY; gesto.movido = false; });
+  m.addEventListener('pointerup', function(e){
+    if (gesto.y === null) return;
+    var dy = e.clientY - gesto.y; gesto.y = null;
+    if (Math.abs(dy) > 35) { gesto.movido = true; mover(dy < 0 ? 1 : -1); }
+  });
+  m.addEventListener('pointercancel', function(){ gesto.y = null; });
+  m.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var ahora = Date.now();
+    if (Math.abs(e.deltaY) < 10 || ahora - gesto.rueda < 520) return;
+    gesto.rueda = ahora; mover(e.deltaY > 0 ? 1 : -1);
+  }, {passive: false});
+  m.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowDown') { e.preventDefault(); mover(1); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); mover(-1); }
+  });
+}
+
+function renderPasados(){
+  var h = '<div class="pad"><div class="fila" style="margin-bottom:22px"><button class="circ" data-a="inicio" aria-label="Volver">' + IC.atras + '</button>' +
+          '<h1 style="font-size:28px">Viajes <span class="it">pasados</span></h1></div><div class="pasados">';
+  pasados().forEach(function(v){
+    h += '<button class="fila-pasado" data-a="abrir" data-id="' + esc(v.id) + '"><span style="min-width:0"><span style="display:block;font-size:20px;font-weight:500;overflow-wrap:anywhere">' + esc(v.titulo) + '</span>' +
+         '<span class="suave num" style="display:block;font-size:14px;margin-top:2px">' + esc(rango(v)) + '</span></span>' + IC.flecha + '</button>';
+  });
+  return h + '</div></div>';
+}
+
+/* Ficha */
+function tramoVista(t){
+  t = t || {};
+  var g = function(x){ return x && String(x).trim() ? String(x) : '—'; };
+  return {
+    fecha: t.fecha ? sinPunto(corto(aFecha(t.fecha))).toUpperCase() : '—',
+    hora: g(t.hora), origen: g((t.origen || '').toUpperCase()), destino: g((t.destino || '').toUpperCase()),
+    ciudadOrigen: g(t.ciudadOrigen), ciudadDestino: g(t.ciudadDestino), numero: g(t.numero), asiento: g(t.asiento),
+    compania: g(t.compania).toUpperCase()
+  };
+}
+function conteoMaleta(v){
+  var m = v.maleta || maletaBase(), tot = 0, he = 0, tt = m.tareas.length, th = 0;
+  m.grupos.forEach(function(g){ g.items.forEach(function(it){ tot++; if (m.marcados[it]) he++; }); });
+  m.tareas.forEach(function(t){ if (m.marcados[t]) th++; });
+  return {tot: tot, he: he, tt: tt, th: th};
+}
+function renderViaje(){
+  var v = viaje(), tr = v.transporte;
+  var n = noches(v.inicio, v.fin);
+  var foto = fotoUrl(v.fotoId);
+  var h = '<div class="cabecera" style="min-height:' + (tr ? 560 : 400) + 'px">';
+  if (foto) h += '<img class="fondo" src="' + esc(foto) + '" alt="">';
+  else h += '<svg class="fondo" viewBox="0 0 390 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="290" cy="140" r="58" fill="#F07F2E" opacity=".85"/><path d="M0 330 L120 210 L200 290 L260 240 L390 350 L390 480 L0 480 Z" fill="#24404A"/><path d="M0 380 L90 320 L170 370 L270 300 L390 390 L390 480 L0 480 Z" fill="#1A3039"/></svg>';
+  h += '<div class="velo"></div>';
+  h += '<div class="barra"><button class="circ vidrio" data-a="inicio" aria-label="Volver a mis viajes">' + IC.atras + '</button>';
+  if (assets) h += '<label class="circ vidrio" style="position:relative;cursor:pointer" aria-label="Cambiar foto de portada"><input type="file" accept="image/*" id="foto" style="position:absolute;width:1px;height:1px;opacity:0">' + IC.camara + '</label>';
+  h += '</div>';
+  if (S.subiendo) h += '<div class="subiendo" role="status">Subiendo foto…</div>';
+  h += '<div class="contenido"><div class="cab-titulo"><div style="min-width:0"><div class="t1x">' + esc(v.titulo) + '</div>' +
+       (v.subtitulo ? '<div class="t2x">' + esc(v.subtitulo) + '</div>' : '') +
+       '<div class="t3x num">' + esc(rango(v)) + ' · ' + textoNoches(n) + '</div></div>' +
+       '<button class="circ peq vidrio" data-a="datos" aria-label="Editar datos del viaje">' + IC.lapiz + '</button></div>';
+  if (!tr) {
+    h += '<button class="btn-transporte vidrio" data-a="transporte" aria-label="Añadir transporte">' + IC.masP + IC.coche + '</button>';
+  } else {
+    var tx = TIPOS[tr.tipo] || TIPOS.avion, a = tramoVista(tr.ida), b = tramoVista(tr.vuelta);
+    h += '<div class="billete vidrio"><div class="ida">' +
+      '<div class="fila entre etiq" style="gap:10px"><span>Ida · ' + esc(a.fecha) + '</span><span style="color:var(--naranja-2);text-align:right">' + esc(a.compania) + '</span></div>' +
+      '<div class="fila entre" style="gap:8px;margin-top:14px"><div style="min-width:0"><div class="cod">' + esc(a.origen) + '</div><div class="ciudad">' + esc(a.ciudadOrigen) + '</div></div>' +
+      '<span class="icono-t" role="img" aria-label="' + esc(tx.nombre) + '">' + IC[tr.tipo || 'avion'] + '</span>' +
+      '<div style="min-width:0;text-align:right"><div class="cod">' + esc(a.destino) + '</div><div class="ciudad">' + esc(a.ciudadDestino) + '</div></div></div>' +
+      '<div class="datos"><div>Salida<b class="num">' + esc(a.hora) + '</b></div><div>' + esc(tx.numero) + '<b>' + esc(a.numero) + '</b></div><div>Asiento<b>' + esc(a.asiento) + '</b></div></div></div>' +
+      '<div class="vuelta"><div style="min-width:0"><div class="etiq num" style="color:rgba(255,255,255,.88)">Vuelta · ' + esc(b.fecha) + ' · ' + esc(b.hora) + '</div>' +
+      '<div style="font-size:20px;font-weight:500;margin-top:2px">' + esc(b.origen) + ' → ' + esc(b.destino) + '</div></div>' +
+      '<button class="circ peq vidrio" style="background:transparent" data-a="transporte" aria-label="Editar transporte">' + IC.lapiz + '</button></div></div>';
+  }
+  h += '</div></div>';
+
+  h += '<div class="pad" style="display:flex;flex-direction:column;gap:16px;padding-top:20px">';
+  h += '<div class="menu"><button class="pild activa" aria-label="Plan" aria-pressed="true">' + IC.pin + '</button>' +
+       '<button class="pild" data-a="maleta" aria-label="Maleta y tareas">' + IC.maleta + '</button></div>';
+  var planes = (v.planes || []).slice().sort(function(x, y){ return x.dia - y.dia || (x.creado || 0) - (y.creado || 0); });
+  var dias = {}; planes.forEach(function(p){ dias[p.dia] = true; });
+  h += '<div class="seccion" style="margin-top:4px"><h2>Itinerario</h2>' + (planes.length ? '<span class="suave num" style="font-size:14px">' + Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan</span>' : '') + '</div>';
+  h += '<div style="display:flex;flex-direction:column;gap:10px">';
+  var llegada = false;
+  planes.forEach(function(p){
+    var d = diaFecha(v, p.dia);
+    var chip = '';
+    if (tr && p.dia === 1 && !llegada && tr.ida && tr.ida.ciudadDestino) { chip = '<span class="llegada">' + IC.pinP + 'Llegada a ' + esc(tr.ida.ciudadDestino) + '</span>'; llegada = true; }
+    h += '<button class="plan" data-a="editarPlan" data-id="' + esc(p.id) + '" aria-label="Editar plan: ' + esc(p.titulo) + '"><span class="txt">' +
+      '<span class="suave" style="display:block;font-size:13px">Día ' + p.dia + '</span><span class="lugar">' + esc(p.titulo) + '</span>' +
+      (p.descripcion ? '<span class="desc">' + esc(p.descripcion) + '</span>' : '') + chip + '</span>' +
+      '<span class="fecha-dia"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></button>';
+  });
+  if (!planes.length) h += '<button class="boton b-tinta" data-a="nuevoPlan" style="height:52px">' + IC.mas + 'Añadir itinerario</button>';
+  else h += '<button class="dash" data-a="nuevoPlan">' + IC.mas + 'Añadir plan</button>';
+  h += '</div>';
+  var c = conteoMaleta(v);
+  var pm = c.tot ? Math.round(c.he / c.tot * 100) : 0, pt = c.tt ? Math.round(c.th / c.tt * 100) : 0;
+  h += '<div class="progreso" style="margin-top:4px">' +
+    '<button class="prog" data-a="maleta"><span class="suave" style="font-size:13px">Maleta</span><span class="grande num">' + c.he + '<span class="suave" style="font-size:16px"> / ' + c.tot + '</span></span><span class="barra-p"><i style="width:' + pm + '%;background:var(--naranja)"></i></span></button>' +
+    '<button class="prog" data-a="maleta"><span class="suave" style="font-size:13px">Antes de salir</span><span class="grande num">' + c.th + '<span class="suave" style="font-size:16px"> / ' + c.tt + '</span></span><span class="barra-p"><i style="width:' + pt + '%;background:var(--tinta)"></i></span></button></div>';
+  return h + '</div>';
+}
+
+/* Hojas */
+function cabHoja(titulo){
+  return '<div class="hoja-cab"><h2>' + titulo + '</h2><button class="circ peq" data-a="cerrar" aria-label="Cerrar">' + IC.x + '</button></div>';
+}
+function renderHoja(){
+  var t = S.hoja.tipo, h = '<div class="hoja-fondo"><div class="hoja">';
+  if (t === 'nuevo' || t === 'datos') h += hojaDatos(t);
+  else if (t === 'plan') h += hojaPlan();
+  else if (t === 'transporte') h += hojaTransporte();
+  else if (t === 'maleta') h += hojaMaleta();
+  else if (t === 'copia') h += hojaCopia();
+  return h + '</div></div>';
+}
+function hojaCopia(){
+  return cabHoja('Copia de <span class="it">seguridad</span>') +
+    '<p class="suave" style="margin:0;line-height:1.5">Tus viajes y fotos se guardan solo en este iPhone. Haz una copia de vez en cuando y guárdala en Archivos o iCloud Drive: así podrás recuperarlo todo si cambias de móvil o borras la app.</p>' +
+    '<button class="boton b-tinta" data-a="exportar">Guardar una copia</button>' +
+    '<button class="boton b-borde" data-a="importar">Restaurar desde una copia</button>' +
+    '<p class="suave" style="margin:0;font-size:14px;line-height:1.5">Al restaurar, los viajes de la copia se añaden a los que ya tienes; si un viaje ya existe, se sustituye por el de la copia.</p>';
+}
+function hojaDatos(t){
+  var v = t === 'datos' ? viaje() : {titulo: '', subtitulo: '', inicio: '', fin: ''};
+  var h = cabHoja(t === 'nuevo' ? 'Nuevo <span class="it">viaje</span>' : 'Datos del <span class="it">viaje</span>');
+  h += '<form data-f="datos" style="display:flex;flex-direction:column;gap:14px" novalidate>' +
+    '<label class="campo-et" for="f-titulo">Título<input class="campo" id="f-titulo" name="titulo" maxlength="40" placeholder="Ej. Japón" value="' + esc(v.titulo) + '" required></label>' +
+    '<label class="campo-et" for="f-sub">Subtítulo<input class="campo" id="f-sub" name="subtitulo" maxlength="40" placeholder="Ej. Tokio · Japón" value="' + esc(v.subtitulo) + '"></label>' +
+    '<div class="dos"><label class="campo-et" for="f-ini">Ida<input class="campo" type="date" id="f-ini" name="inicio" value="' + esc(v.inicio) + '" required></label>' +
+    '<label class="campo-et" for="f-fin">Vuelta<input class="campo" type="date" id="f-fin" name="fin" value="' + esc(v.fin) + '" required></label></div>' +
+    '<div class="dato"><span class="suave">Duración</span><span id="f-dur" style="font-weight:600;text-align:right">' + esc(duracionTexto(v.inicio, v.fin)) + '</span></div>' +
+    '<p id="f-error" class="suave" style="margin:0;color:var(--rojo)" hidden></p>' +
+    '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">' + (t === 'nuevo' ? 'Crear viaje' : 'Guardar') + '</button></div></form>';
+  if (t === 'datos') h += '<button class="boton b-texto" data-a="borrarViaje">' + IC.basura + (S.confirmar ? 'Toca otra vez para eliminar el viaje' : 'Eliminar viaje') + '</button>';
+  return h;
+}
+function hojaPlan(){
+  var v = viaje(), p = S.hoja.plan, n = noches(v.inicio, v.fin) + 1;
+  var h = cabHoja((p.id ? 'Editar' : 'Nuevo') + ' <span class="it">plan</span>');
+  var ops = '';
+  for (var i = 1; i <= n; i++) {
+    var d = diaFecha(v, i);
+    ops += '<option value="' + i + '"' + (i === p.dia ? ' selected' : '') + '>Día ' + i + ' · ' + esc(fmt(d, {weekday: 'short', day: 'numeric', month: 'short'})) + '</option>';
+  }
+  if (p.dia > n) ops += '<option value="' + p.dia + '" selected>Día ' + p.dia + ' (fuera de las fechas)</option>';
+  h += '<form data-f="plan" style="display:flex;flex-direction:column;gap:14px" novalidate>' +
+    '<label class="campo-et" for="p-dia">Día<select class="campo" id="p-dia" name="dia">' + ops + '</select></label>' +
+    '<label class="campo-et" for="p-lugar">Lugar<input class="campo" id="p-lugar" name="titulo" maxlength="80" placeholder="Ej. Templo Senso-ji" value="' + esc(p.titulo) + '" required></label>' +
+    '<label class="campo-et" for="p-desc">Descripción<textarea class="campo" id="p-desc" name="descripcion" rows="4" maxlength="600" placeholder="Qué hacer, horarios, notas…">' + esc(p.descripcion) + '</textarea></label>' +
+    '<p id="f-error" style="margin:0;color:var(--rojo)" hidden></p>' +
+    '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar plan</button></div></form>';
+  if (p.id) h += '<button class="boton b-texto" data-a="borrarPlan">' + IC.basura + 'Eliminar plan</button>';
+  return h;
+}
+function hojaTransporte(){
+  var v = viaje(), tr = v.transporte;
+  var datos = tr ? clone(tr) : {tipo: 'avion', ida: {fecha: v.inicio}, vuelta: {fecha: v.fin}};
+  var tx = TIPOS[datos.tipo] || TIPOS.avion;
+  var h = cabHoja('Tu <span class="it">transporte</span>');
+  h += '<form data-f="transporte" style="display:flex;flex-direction:column;gap:14px" novalidate><div class="segm" role="radiogroup" aria-label="Tipo de transporte">';
+  ['avion', 'tren', 'bus'].forEach(function(k){
+    h += '<span><input type="radio" name="tipo" id="tipo-' + k + '" value="' + k + '"' + (datos.tipo === k ? ' checked' : '') + '><label for="tipo-' + k + '">' + TIPOS[k].nombre + '</label></span>';
+  });
+  h += '</div>';
+  [['ida', 'Ida'], ['vuelta', 'Vuelta']].forEach(function(par){
+    var t = datos[par[0]] || {}, k = par[0];
+    var c = function(nombre, etiqueta, extra, tipo){
+      return '<label class="campo-et" for="' + k + '-' + nombre + '">' + etiqueta + '<input class="campo" ' + (tipo ? 'type="' + tipo + '" ' : '') + 'id="' + k + '-' + nombre + '" name="' + k + '_' + nombre + '" value="' + esc(t[nombre] || '') + '"' + (extra || '') + '></label>';
+    };
+    h += '<div class="bloque-t"><div class="etiq suave">' + par[1] + '</div><div class="dos">' +
+      c('fecha', 'Fecha', '', 'date') + c('hora', 'Hora de salida', '', 'time') +
+      c('origen', 'Desde (código)', ' maxlength="4" autocapitalize="characters" placeholder="MAD"') + c('ciudadOrigen', 'Ciudad', ' placeholder="Madrid"') +
+      c('destino', 'Hasta (código)', ' maxlength="4" autocapitalize="characters" placeholder="HND"') + c('ciudadDestino', 'Ciudad', ' placeholder="Tokio"') +
+      '<label class="campo-et" for="' + k + '-numero"><span data-l="numero">' + tx.etNumero + '</span><input class="campo" id="' + k + '-numero" name="' + k + '_numero" value="' + esc(t.numero || '') + '"></label>' +
+      c('asiento', 'Asiento') + '</div>' +
+      '<label class="campo-et" for="' + k + '-compania"><span data-l="compania">' + tx.compania + '</span><input class="campo" id="' + k + '-compania" name="' + k + '_compania" value="' + esc(t.compania || '') + '"></label></div>';
+  });
+  h += '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar</button></div></form>';
+  if (tr) h += '<button class="boton b-texto" data-a="quitarTransporte">' + IC.basura + 'Quitar transporte</button>';
+  return h;
+}
+function hojaMaleta(){
+  var v = viaje(), m = v.maleta || maletaBase(), c = conteoMaleta(v);
+  var pm = c.tot ? Math.round(c.he / c.tot * 100) : 0;
+  var h = cabHoja('Maleta y <span class="it">tareas</span>');
+  h += '<div class="resumen-m"><div class="fila entre"><span class="etiq" style="color:var(--noche-2)">En la maleta</span><span class="num" style="font-size:14px;color:var(--noche-2)">' + pm + '% listo</span></div>' +
+       '<div class="grande num">' + c.he + '<span style="font-size:18px;color:var(--noche-2)"> / ' + c.tot + ' artículos</span></div>' +
+       '<div style="height:8px;border-radius:4px;background:var(--noche-3);margin-top:14px;overflow:hidden"><div style="height:8px;border-radius:4px;background:var(--naranja);width:' + pm + '%"></div></div></div>';
+  var bloque = function(key, nombreHtml, lista, agua, placeholder){
+    var hechos = lista.filter(function(x){ return m.marcados[x]; }).length;
+    var abierto = !S.cerrados[key];
+    var s = '<div class="grupo' + (agua ? ' agua' : '') + '"><button class="grupo-cab" data-a="plegar" data-k="' + esc(key) + '" aria-expanded="' + abierto + '">' +
+      '<span class="nom">' + nombreHtml + '</span><span class="suave num" style="font-size:14px">' + hechos + ' / ' + lista.length + '</span>' + (abierto ? IC.chevA : IC.chevB) + '</button>';
+    if (abierto) {
+      s += '<div class="grupo-lista">';
+      lista.forEach(function(it, i){
+        var on = !!m.marcados[it], id = 'c-' + esc(key).replace(/[^a-zA-Z0-9]/g, '') + '-' + i;
+        s += '<div class="item' + (on ? ' hecho' : '') + '"><label for="' + id + '"><input type="checkbox" class="chk" id="' + id + '" data-a="marcar" data-n="' + esc(it) + '"' + (on ? ' checked' : '') + '><span class="txt">' + esc(it) + '</span></label>' +
+             '<button class="quitar" data-a="quitarItem" data-k="' + esc(key) + '" data-i="' + i + '" aria-label="Eliminar ' + esc(it) + '">' + IC.xP + '</button></div>';
+      });
+      if (S.anadiendo === key) {
+        s += '<form class="anadir-form" data-f="item" data-k="' + esc(key) + '"><input class="campo" id="nuevo-item" maxlength="60" aria-label="' + esc(placeholder) + '" placeholder="' + esc(placeholder) + '" enterkeyhint="done">' +
+             '<button type="submit" class="pild activa" style="flex-shrink:0">Añadir</button><button type="button" class="quitar" data-a="cancelarItem" aria-label="Cancelar">' + IC.x + '</button></form>';
+      } else {
+        s += '<button class="anadir" data-a="empezarItem" data-k="' + esc(key) + '">' + IC.mas + 'Añadir</button>';
+      }
+      s += '</div>';
+    }
+    return s + '</div>';
+  };
+  m.grupos.forEach(function(g){ h += bloque(g.nombre, esc(g.nombre), g.items, false, 'Nuevo en ' + g.nombre.toLowerCase()); });
+  h += '<div style="margin-top:6px"></div>' + bloque('__tareas', 'Antes de <span class="it">salir</span>', m.tareas, true, 'Nueva tarea');
+  return h;
+}
+
+/* ---------- acciones ---------- */
+function editarMaleta(fn){
+  var v = clone(viaje());
+  v.maleta = v.maleta || maletaBase();
+  fn(v.maleta);
+  guardar(v);
+}
+var acciones = {
+  nuevo: function(){ abrirHoja({tipo: 'nuevo'}); },
+  copia: function(){ abrirHoja({tipo: 'copia'}); },
+  exportar: function(){ exportar(); },
+  importar: function(){ var i = $('#importar'); i.value = ''; i.click(); },
+  carta: function(el){
+    if (gesto.movido) { gesto.movido = false; return; }
+    var i = +el.dataset.i;
+    if (i === S.activo) irA('viaje', {viajeId: pendientes()[i].id});
+    else { S.activo = i; colocarMazo(); }
+  },
+  anterior: function(){ mover(-1); },
+  siguiente: function(){ mover(1); },
+  verPasados: function(){ irA('pasados'); },
+  abrir: function(el){ irA('viaje', {viajeId: el.dataset.id}); },
+  inicio: function(){ irA('inicio'); },
+  cerrar: cerrarHoja,
+  datos: function(){ abrirHoja({tipo: 'datos'}); },
+  transporte: function(){ abrirHoja({tipo: 'transporte'}); },
+  maleta: function(){
+    var v = viaje(), m = v.maleta || maletaBase(), c = {__tareas: true};
+    m.grupos.forEach(function(g){ c[g.nombre] = true; });
+    S.cerrados = c; S.anadiendo = null; S.borrador = '';
+    abrirHoja({tipo: 'maleta'});
+  },
+  nuevoPlan: function(){
+    var v = viaje(), total = noches(v.inicio, v.fin) + 1, ocupados = {};
+    (v.planes || []).forEach(function(p){ ocupados[p.dia] = true; });
+    var d = 1; while (ocupados[d] && d < total) d++;
+    abrirHoja({tipo: 'plan', plan: {id: null, dia: d, titulo: '', descripcion: ''}});
+  },
+  editarPlan: function(el){
+    var p = (viaje().planes || []).filter(function(x){ return x.id === el.dataset.id; })[0];
+    if (p) abrirHoja({tipo: 'plan', plan: clone(p)});
+  },
+  borrarPlan: function(){
+    var v = clone(viaje()), id = S.hoja.plan.id;
+    v.planes = (v.planes || []).filter(function(p){ return p.id !== id; });
+    guardar(v); cerrarHoja();
+  },
+  quitarTransporte: function(){ var v = clone(viaje()); v.transporte = null; guardar(v); cerrarHoja(); },
+  borrarViaje: function(){
+    if (!S.confirmar) { S.confirmar = true; render(); return; }
+    var v = viaje(); borrarViaje(v); S.activo = 0; irA('inicio'); toast('Viaje eliminado');
+  },
+  plegar: function(el){ var k = el.dataset.k; S.cerrados[k] = !S.cerrados[k]; if (S.anadiendo === k) S.anadiendo = null; render(); },
+  empezarItem: function(el){ S.anadiendo = el.dataset.k; S.borrador = ''; render(); },
+  cancelarItem: function(){ S.anadiendo = null; S.borrador = ''; render(); },
+  quitarItem: function(el){
+    var k = el.dataset.k, i = +el.dataset.i;
+    editarMaleta(function(m){
+      var fuera = function(l){ return l.filter(function(_, j){ return j !== i; }); };
+      if (k === '__tareas') m.tareas = fuera(m.tareas);
+      else m.grupos.forEach(function(g){ if (g.nombre === k) g.items = fuera(g.items); });
+    });
+    render();
+  }
+};
+
+var app = $('#app');
+app.addEventListener('click', function(e){
+  var el = e.target.closest('[data-a]');
+  if (!el || el.tagName === 'INPUT') return;
+  var fn = acciones[el.dataset.a];
+  if (fn) { e.preventDefault(); fn(el); }
+});
+app.addEventListener('change', function(e){
+  var el = e.target;
+  if (el.dataset && el.dataset.a === 'marcar') {
+    var nombre = el.dataset.n;
+    editarMaleta(function(m){ m.marcados[nombre] = !m.marcados[nombre]; if (!m.marcados[nombre]) delete m.marcados[nombre]; });
+    render(); var again = document.getElementById(el.id); if (again) again.focus();
+  } else if (el.id === 'foto' && el.files && el.files[0]) {
+    subirFoto(el.files[0]);
+  } else if (el.name === 'tipo') {
+    var tx = TIPOS[el.value];
+    document.querySelectorAll('[data-l="numero"]').forEach(function(s){ s.textContent = tx.etNumero; });
+    document.querySelectorAll('[data-l="compania"]').forEach(function(s){ s.textContent = tx.compania; });
+  }
+});
+app.addEventListener('input', function(e){
+  var el = e.target;
+  if (el.id === 'nuevo-item') S.borrador = el.value;
+  if (el.id === 'f-ini' || el.id === 'f-fin') {
+    var ini = $('#f-ini'), fin = $('#f-fin');
+    if (el.id === 'f-ini' && ini.value) { fin.min = ini.value; if (fin.value && fin.value < ini.value) fin.value = ini.value; }
+    $('#f-dur').textContent = duracionTexto(ini.value, fin.value);
+  }
+});
+app.addEventListener('submit', function(e){
+  e.preventDefault();
+  var f = e.target, tipo = f.dataset.f, fd = new FormData(f);
+  var val = function(k){ return String(fd.get(k) || '').trim(); };
+  var error = function(t){ var p = $('#f-error'); if (p) { p.textContent = t; p.hidden = false; } };
+  if (tipo === 'datos') {
+    var d = {titulo: val('titulo'), subtitulo: val('subtitulo'), inicio: val('inicio'), fin: val('fin')};
+    if (!d.titulo) return error('Escribe un título para el viaje.');
+    if (!d.inicio || !d.fin) return error('Elige la fecha de ida y la de vuelta.');
+    if (d.fin < d.inicio) return error('La vuelta no puede ser antes que la ida.');
+    if (S.hoja.tipo === 'nuevo') {
+      var nv = {id: nuevoId('v'), titulo: d.titulo, subtitulo: d.subtitulo, inicio: d.inicio, fin: d.fin, transporte: null, planes: [], maleta: maletaBase(), fotoId: null, creado: Date.now()};
+      guardar(nv);
+      var lista = pendientes(); var pos = lista.findIndex(function(x){ return x.id === nv.id; });
+      S.activo = pos < 0 ? 0 : pos;
+      irA('inicio');
+      if (pos < 0) toast('Viaje guardado en Viajes pasados');
+    } else {
+      var v = clone(viaje());
+      v.titulo = d.titulo; v.subtitulo = d.subtitulo; v.inicio = d.inicio; v.fin = d.fin;
+      guardar(v); cerrarHoja();
+    }
+  } else if (tipo === 'plan') {
+    var titulo = val('titulo');
+    if (!titulo) return error('Escribe el lugar o la actividad.');
+    var v2 = clone(viaje()), p = S.hoja.plan;
+    var datos = {dia: parseInt(fd.get('dia'), 10) || 1, titulo: titulo, descripcion: val('descripcion')};
+    v2.planes = v2.planes || [];
+    if (p.id) v2.planes = v2.planes.map(function(x){ return x.id === p.id ? Object.assign(x, datos) : x; });
+    else v2.planes.push(Object.assign({id: nuevoId('p'), creado: Date.now()}, datos));
+    guardar(v2); cerrarHoja();
+  } else if (tipo === 'transporte') {
+    var v3 = clone(viaje());
+    var tramo = function(k){
+      return {fecha: val(k + '_fecha'), hora: val(k + '_hora'), origen: val(k + '_origen').toUpperCase(), ciudadOrigen: val(k + '_ciudadOrigen'),
+              destino: val(k + '_destino').toUpperCase(), ciudadDestino: val(k + '_ciudadDestino'), numero: val(k + '_numero'), asiento: val(k + '_asiento'), compania: val(k + '_compania')};
+    };
+    v3.transporte = {tipo: val('tipo') || 'avion', ida: tramo('ida'), vuelta: tramo('vuelta')};
+    guardar(v3); cerrarHoja();
+  } else if (tipo === 'item') {
+    var texto = (S.borrador || '').trim(), k = f.dataset.k;
+    if (!texto) return;
+    editarMaleta(function(m){
+      if (k === '__tareas') { if (m.tareas.indexOf(texto) < 0) m.tareas.push(texto); }
+      else m.grupos.forEach(function(g){ if (g.nombre === k && g.items.indexOf(texto) < 0) g.items.push(texto); });
+    });
+    S.borrador = ''; render();
+  }
+});
+$('#importar').addEventListener('change', function(e){ var f = e.target.files && e.target.files[0]; if (f) importar(f); });
+app.addEventListener('keydown', function(e){
+  if (e.key === 'Escape' && S.anadiendo) { S.anadiendo = null; S.borrador = ''; render(); }
+});
+
+/* ---------- foto de portada ---------- */
+function reducir(file){
+  return new Promise(function(ok, ko){
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      var max = 1920, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+      var c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){ b ? ok(b) : ko(new Error('canvas')); }, 'image/jpeg', 0.85);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); ko(new Error('img')); };
+    img.src = url;
+  });
+}
+async function subirFoto(file){
+  if (!assets) return;
+  var id = S.viajeId;
+  S.subiendo = true; render();
+  try {
+    var blob = await reducir(file);
+    var r = await assets.upload(blob, {type: 'image/jpeg'});
+    var v = viaje(id);
+    if (v) {
+      var anterior = v.fotoId;
+      v = clone(v); v.fotoId = r.id; guardar(v);
+      if (anterior && anterior !== r.id) assets.delete(anterior).catch(function(){});
+    }
+  } catch (e) {
+    var code = e && e.code;
+    toast(code === 'too_large' ? 'La foto es demasiado grande.' : code === 'quota_or_state' ? 'No queda espacio para más fotos.' : 'No se pudo subir la foto. Prueba con otra.');
+  }
+  S.subiendo = false;
+  if (!S.hoja) render();
+}
+
+render();
+iniciar();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+})();
+</script>
+</body>
+</html>
