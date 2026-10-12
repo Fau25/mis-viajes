@@ -45,6 +45,8 @@ h1,h2{margin:0;font-weight:500;letter-spacing:-.02em;text-wrap:balance}
 .circ{width:48px;height:48px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--tinta);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--tinta)}
 .circ.lleno{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
 .circ.peq{width:44px;height:44px}
+.circ.peligro{width:auto;max-width:230px;padding:0 16px;gap:8px;border-radius:var(--r);border-color:var(--rojo);color:var(--rojo);font-size:15px;font-weight:500}
+.circ.peligro span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .circ.vidrio{border-color:rgba(255,255,255,.85);background:rgba(19,33,42,.25);color:#fff}
 .pild{height:44px;padding:0 18px;border-radius:var(--r);border:1.5px solid var(--linea);background:transparent;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px}
 .pild.activa{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
@@ -438,7 +440,7 @@ function renderInicio(){
         '<span class="flecha" aria-hidden="true">' + IC.flecha + '</span></span></span></button>';
     });
     h += '</div>';
-    h += '<div class="fila entre"><span class="suave num" id="contador" aria-live="polite"></span><span class="fila" style="gap:8px">' +
+    h += '<div class="fila entre"><button class="circ" id="b-borrar" data-a="borrarActivo" aria-label="Eliminar este viaje">' + IC.basura + '</button><span class="fila" style="gap:8px">' +
          '<button class="circ" data-a="anterior" id="b-ant" aria-label="Viaje anterior">' + IC.arriba + '</button>' +
          '<button class="circ" data-a="siguiente" id="b-sig" aria-label="Viaje siguiente">' + IC.abajo + '</button></span></div>';
   }
@@ -467,10 +469,15 @@ function colocarMazo(pos){
     c.setAttribute('aria-label', (activa ? 'Abrir viaje: ' : 'Ir a ') + (t ? t.titulo : ''));
     c.classList.toggle('activa', activa);
   });
-  var cont = $('#contador'); if (cont) cont.textContent = (S.activo + 1) + ' de ' + n + (n === 1 ? ' viaje' : ' viajes');
+  if (S.confirmarInicio !== S.activo) restaurarBorrar();
   var a = $('#b-ant'), b = $('#b-sig');
   if (a) { a.disabled = S.activo <= 0; a.style.opacity = a.disabled ? '.35' : '1'; }
   if (b) { b.disabled = S.activo >= n - 1; b.style.opacity = b.disabled ? '.35' : '1'; }
+}
+function restaurarBorrar(){
+  S.confirmarInicio = null; clearTimeout(restaurarBorrar._t);
+  var b = $('#b-borrar'); if (!b) return;
+  b.classList.remove('peligro'); b.innerHTML = IC.basura; b.setAttribute('aria-label', 'Eliminar este viaje');
 }
 function mover(p){
   var n = pendientes().length;
@@ -759,6 +766,22 @@ var acciones = {
     var i = +el.dataset.i;
     if (i === S.activo) irA('viaje', {viajeId: pendientes()[i].id});
     else { S.activo = i; colocarMazo(); }
+  },
+  borrarActivo: function(el){
+    var lista = pendientes(), v = lista[S.activo];
+    if (!v) return;
+    if (S.confirmarInicio !== S.activo) {
+      S.confirmarInicio = S.activo;
+      el.classList.add('peligro');
+      el.innerHTML = IC.basura + '<span>¿Eliminar ' + esc(v.titulo) + '?</span>';
+      el.setAttribute('aria-label', 'Toca otra vez para eliminar ' + v.titulo);
+      clearTimeout(restaurarBorrar._t); restaurarBorrar._t = setTimeout(restaurarBorrar, 4000);
+      return;
+    }
+    restaurarBorrar();
+    borrarViaje(v);
+    S.activo = Math.max(0, Math.min(S.activo, pendientes().length - 1));
+    render(); toast('Viaje eliminado');
   },
   anterior: function(){ mover(-1); },
   siguiente: function(){ mover(1); },
