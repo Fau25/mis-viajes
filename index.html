@@ -213,7 +213,7 @@ input[type=date].campo,input[type=time].campo{min-width:0;line-height:44px}
 /* Fondo de paisaje en el inicio */
 html.en-inicio{background:#2b221b}
 html.en-inicio body{background:transparent}
-.capa-fondo{position:fixed;inset:0;z-index:-2;background:#2b221b center 62%/cover no-repeat;opacity:0;transition:opacity .9s ease;display:none}
+.capa-fondo{position:fixed;inset:0;z-index:-2;background:#2b221b center 62%/cover no-repeat;opacity:0;transition:opacity 1.2s ease;display:none}
 html.en-inicio .capa-fondo{display:block}
 .capa-fondo.visible{opacity:1}
 html.en-inicio body::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(12,14,16,.62) 0%,rgba(12,14,16,.18) 34%,rgba(12,14,16,.12) 60%,rgba(12,14,16,.66) 100%)}
@@ -499,14 +499,26 @@ function ponerFondo(blob){
 }
 /* Fondo del inicio: la foto del viaje que está delante; si no tiene, el fondo general */
 var fondoActual = null, capaActiva = 'a';
+/* Carrusel de fotos cuando no hay viaje (o el viaje no tiene foto) */
+var CARRUSEL = ['img/inicio-1.jpg', 'img/inicio-2.jpg', 'img/inicio-3.jpg'], idxCarrusel = 0, tCarrusel = null;
 function urlFondoPorDefecto(){
   if (urlFondo) return urlFondo;
-  var ancho = false; try { ancho = window.matchMedia('(min-width: 760px)').matches; } catch (e) {}
-  return ancho ? 'img/fondo.jpg' : 'img/fondo-movil.jpg';
+  return CARRUSEL[idxCarrusel];
+}
+function gestionarCarrusel(enCarrusel){
+  if (enCarrusel && !tCarrusel) {
+    tCarrusel = setInterval(function(){
+      if (S.hoja || S.vista !== 'inicio' || document.hidden) return;
+      idxCarrusel = (idxCarrusel + 1) % CARRUSEL.length;
+      CARRUSEL.slice(idxCarrusel + 1, idxCarrusel + 2).forEach(function(u){ new Image().src = u; });
+      actualizarFondo();
+    }, 7000);
+  } else if (!enCarrusel && tCarrusel) { clearInterval(tCarrusel); tCarrusel = null; }
 }
 function actualizarFondo(forzar){
   var v = pendientes()[S.activo];
   var url = (v && v.fotoId && fotoUrl(v.fotoId)) || urlFondoPorDefecto();
+  gestionarCarrusel(CARRUSEL.indexOf(url) >= 0);
   if (url === fondoActual && !forzar) return;
   fondoActual = url;
   var siguiente = capaActiva === 'a' ? 'b' : 'a';
@@ -982,7 +994,7 @@ function hojaCopia(){
     (S.hoja && S.hoja.errorClave ? '<p style="margin:0;color:var(--rojo)">La contraseña no coincide con la de Cloudflare. Escríbela de nuevo.</p>' : '') +
     '<h3 style="margin:14px 0 0;font-size:19px;font-weight:500">Fondo del inicio</h3>' +
     '<p class="suave" style="margin:0;line-height:1.5">Pon una foto tuya detrás de las tarjetas del inicio o vuelve al paisaje original.</p>' +
-    (assets ? '<div class="acciones" style="margin-top:0"><button class="boton b-tinta" data-a="fondoFoto">Elegir foto</button><button class="boton b-borde" data-a="fondoQuitar">Paisaje original</button></div>' : '') +
+    (assets ? '<div class="acciones" style="margin-top:0"><button class="boton b-tinta" data-a="fondoFoto">Elegir foto</button><button class="boton b-borde" data-a="fondoQuitar">Fotos originales</button></div>' : '') +
     '<h3 style="margin:14px 0 0;font-size:19px;font-weight:500">Copia de seguridad</h3>' +
     '<p class="suave" style="margin:0;line-height:1.5">Tus viajes y fotos se guardan solo en este iPhone. Haz una copia de vez en cuando y guárdala en Archivos o iCloud Drive: así podrás recuperarlo todo si cambias de móvil o borras la app.</p>' +
     '<button class="boton b-tinta" data-a="exportar">Guardar una copia</button>' +
@@ -1102,7 +1114,7 @@ var acciones = {
   nuevo: function(){ abrirHoja({tipo: 'nuevo'}); },
   copia: function(){ abrirHoja({tipo: 'copia'}); },
   fondoFoto: function(){ var i = $('#fondo-input'); i.value = ''; i.click(); },
-  fondoQuitar: function(){ tx('fotos', 'readwrite', function(st){ return st.delete('fondo-inicio'); }).catch(function(){}); ponerFondo(null); toast('Paisaje original restaurado'); },
+  fondoQuitar: function(){ tx('fotos', 'readwrite', function(st){ return st.delete('fondo-inicio'); }).catch(function(){}); ponerFondo(null); toast('Fotos originales restaurado'); },
   leerReserva: function(){
     if (!claveIA()) { abrirHoja({tipo: 'copia'}); toast('Primero guarda la contraseña de la app.'); return; }
     S.leerDesde = S.hoja && S.hoja.tipo === 'nuevo' ? 'nuevo' : (S.vista === 'viaje' ? 'viaje' : 'nuevo');
