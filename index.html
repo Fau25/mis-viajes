@@ -99,7 +99,7 @@ h1,h2{margin:0;font-weight:500;letter-spacing:-.02em;text-wrap:balance}
 /* Ficha */
 .cabecera{position:relative;overflow:hidden;border-radius:0 0 20px 20px;background:#2F4B53;display:flex;flex-direction:column;justify-content:flex-end;padding:112px 16px 16px;color:#fff}
 .cabecera .fondo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.cabecera .velo{position:absolute;inset:0;background:linear-gradient(rgba(12,22,28,.35),rgba(12,22,28,.15) 40%,rgba(12,22,28,.45))}
+.cabecera .velo{position:absolute;inset:0;background:linear-gradient(rgba(12,22,28,.12),rgba(12,22,28,.12) 45%,rgba(12,22,28,.45))}
 .cabecera .barra{position:absolute;left:20px;right:20px;top:20px;display:flex;justify-content:space-between;align-items:center}
 .cabecera .contenido{position:relative;display:flex;flex-direction:column;gap:16px}
 .cab-titulo{padding:0 4px 0 8px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
@@ -216,7 +216,7 @@ html.en-inicio body{background:transparent}
 .capa-fondo{position:fixed;inset:0;z-index:-2;background:#2b221b center 62%/cover no-repeat;opacity:0;transition:opacity 1.2s ease;display:none}
 html.en-inicio .capa-fondo{display:block}
 .capa-fondo.visible{opacity:1}
-html.en-inicio body::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(12,14,16,.62) 0%,rgba(12,14,16,.18) 34%,rgba(12,14,16,.12) 60%,rgba(12,14,16,.66) 100%)}
+html.en-inicio body::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(12,14,16,.22) 0%,rgba(12,14,16,.22) 60%,rgba(12,14,16,.6) 100%)}
 html.en-inicio .inicio{color:#fff}
 html.en-inicio .cab-inicio h1{text-shadow:0 2px 24px rgba(0,0,0,.35)}
 html.en-inicio .inicio .circ{border-color:rgba(255,255,255,.75);color:#fff;background:rgba(255,255,255,.08);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
@@ -252,7 +252,7 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
   .z-izq .vacio{margin-top:28px;width:100%}
   .inicio:not(.sin-viajes) .z-izq{height:var(--alto-carta);justify-content:space-between}
   .inicio:not(.sin-viajes) .z-izq .z-extra{margin-top:0}
-  html.en-inicio body::after{background:linear-gradient(90deg,rgba(12,14,16,.5) 0%,rgba(12,14,16,.12) 55%,rgba(12,14,16,.06) 100%),linear-gradient(180deg,rgba(12,14,16,.25),rgba(12,14,16,0) 30%,rgba(12,14,16,0) 70%,rgba(12,14,16,.35))}
+  html.en-inicio body::after{background:linear-gradient(90deg,rgba(12,14,16,.5) 0%,rgba(12,14,16,.12) 55%,rgba(12,14,16,.06) 100%),linear-gradient(180deg,rgba(12,14,16,0) 70%,rgba(12,14,16,.35))}
   .inicio .z-cab{flex-direction:column;align-items:flex-start;gap:24px}
   .cab-inicio h1{font-size:44px}
   .cab-inicio h1 .it{font-size:50px}
@@ -323,6 +323,26 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 @media (min-width:1100px){
   .ficha .cabecera{margin:24px 0 24px 24px;padding:128px 40px 36px}
   .ficha .viaje-pad{padding:36px 40px 72px!important}
+}
+/* Billetes: sin borde blanco y en carrusel horizontal si hay varios */
+.billete.vidrio{border:none}
+.billetes-zona{display:flex;flex-direction:column;gap:10px;min-width:0}
+.billetes{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+.billetes::-webkit-scrollbar{display:none}
+.billetes .billete{flex:0 0 100%;scroll-snap-align:start;min-width:0}
+.billetes-pie{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.puntos{display:flex;gap:6px}
+.punto{width:8px;height:8px;padding:0;border:none;border-radius:999px;background:rgba(255,255,255,.45);transition:width .2s,background .2s}
+.punto.on{width:22px;background:#fff}
+.mas-billete{margin-left:auto;height:36px;padding:0 14px;border-radius:999px;color:#fff;display:flex;align-items:center;gap:6px;font-size:14px;border:none}
+/* Maleta y tareas: dos bloques en iPad y ordenador */
+.maleta-cols,.col-m,.col-t{display:flex;flex-direction:column;gap:14px;min-width:0}
+.resumen-t{background:var(--agua);color:var(--tinta)}
+.resumen-t .etiq{color:var(--tinta-2)}
+@media (max-width:759px){.resumen-t{display:none}.col-t{margin-top:6px}}
+@media (min-width:760px){
+  .hoja.hoja-maleta{max-width:1040px}
+  .maleta-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
 }
 </style>
 
@@ -423,6 +443,9 @@ var S = {
 var db = null, assets = null, modoLocal = false;
 var LS = 'organizador-viajes-v1';
 
+function tieneVuelta(t){ var x = t && t.vuelta; return !!(x && (x.origen || x.destino || x.hora || x.numero)); }
+function billetes(v){ return v ? (v.billetes && v.billetes.length ? v.billetes : (v.transporte ? [v.transporte] : [])) : []; }
+function ponerBilletes(v, lista){ v.billetes = lista; v.transporte = lista[0] || null; }
 function viaje(id){ for (var i = 0; i < S.viajes.length; i++) if (S.viajes[i].id === (id || S.viajeId)) return S.viajes[i]; return null; }
 function ordenInicio(a, b){ return a.inicio < b.inicio ? -1 : a.inicio > b.inicio ? 1 : (a.creado || 0) - (b.creado || 0); }
 function pendientes(){ var h = hoy(); return S.viajes.filter(function(v){ return v.fin >= h; }).sort(ordenInicio); }
@@ -620,6 +643,7 @@ function render(){
   if (S.hoja) app.innerHTML = renderHoja();
   else if (S.vista === 'viaje') {
     app.innerHTML = renderViaje();
+    var cb = $('#billetes'); if (cb) cb.addEventListener('scroll', function(){ var i = Math.round(cb.scrollLeft / Math.max(1, cb.children[0].offsetWidth + 10)); Array.prototype.forEach.call(document.querySelectorAll('.punto'), function(p, k){ p.classList.toggle('on', k === i); }); }, {passive: true});
     var d2 = $('.ficha-der'); if (d2 && S.scrollDer && S.scrollDer.id === S.viajeId) d2.scrollTop = S.scrollDer.y;
   }
   else if (S.vista === 'pasados') app.innerHTML = renderPasados();
@@ -880,7 +904,7 @@ function conteoMaleta(v){
   return {tot: tot, he: he, tt: tt, th: th};
 }
 function renderViaje(){
-  var v = viaje(), tr = v.transporte;
+  var v = viaje(), tr = billetes(v)[0];
   var n = noches(v.inicio, v.fin);
   var foto = fotoUrl(v.fotoId);
   var h = '<div class="ficha"><div class="cabecera" style="min-height:' + (tr ? 560 : 400) + 'px">';
@@ -895,9 +919,12 @@ function renderViaje(){
        (v.subtitulo ? '<div class="t2x">' + esc(v.subtitulo) + '</div>' : '') +
        '<div class="t3x num">' + esc(rango(v)) + ' · ' + textoNoches(n) + '</div></div>' +
        '<button class="circ peq vidrio" data-a="datos" aria-label="Editar datos del viaje">' + IC.lapiz + '</button></div>';
-  if (!tr) {
+  var lista = billetes(v);
+  if (!lista.length) {
     h += '<button class="btn-transporte vidrio" data-a="transporte" aria-label="Añadir transporte">' + IC.masP + IC.coche + '</button>';
   } else {
+    h += '<div class="billetes-zona"><div class="billetes' + (lista.length > 1 ? ' varios' : '') + '" id="billetes">';
+    lista.forEach(function(tr, bi){
     var tx = TIPOS[tr.tipo] || TIPOS.avion, a = tramoVista(tr.ida), b = tramoVista(tr.vuelta);
     h += '<div class="billete vidrio"><div class="ida">' +
       '<div class="fila entre etiq" style="gap:10px"><span>Ida · ' + esc(a.fecha) + '</span><span style="color:var(--naranja-2);text-align:right">' + esc(a.compania) + '</span></div>' +
@@ -905,9 +932,13 @@ function renderViaje(){
       '<span class="icono-t" role="img" aria-label="' + esc(tx.nombre) + '">' + IC[tr.tipo || 'avion'] + '</span>' +
       '<div style="min-width:0;text-align:right"><div class="cod">' + esc(a.destino) + '</div><div class="ciudad">' + esc(a.ciudadDestino) + '</div></div></div>' +
       '<div class="datos"><div>Salida<b class="num">' + esc(a.hora) + '</b></div><div>' + esc(tx.numero) + '<b>' + esc(a.numero) + '</b></div><div>Asiento<b>' + esc(a.asiento) + '</b></div></div></div>' +
-      '<div class="vuelta"><div style="min-width:0"><div class="etiq num" style="color:rgba(255,255,255,.88)">Vuelta · ' + esc(b.fecha) + ' · ' + esc(b.hora) + '</div>' +
-      '<div style="font-size:20px;font-weight:500;margin-top:2px">' + esc(b.origen) + ' → ' + esc(b.destino) + '</div></div>' +
-      '<button class="circ peq vidrio" style="background:transparent" data-a="transporte" aria-label="Editar transporte">' + IC.lapiz + '</button></div></div>';
+      '<div class="vuelta"><div style="min-width:0">' + (tieneVuelta(tr) ? '<div class="etiq num" style="color:rgba(255,255,255,.88)">Vuelta · ' + esc(b.fecha) + ' · ' + esc(b.hora) + '</div>' +
+      '<div style="font-size:20px;font-weight:500;margin-top:2px">' + esc(b.origen) + ' → ' + esc(b.destino) + '</div>' : '<div class="etiq" style="color:rgba(255,255,255,.88)">Solo ida</div>') + '</div>' +
+      '<button class="circ peq vidrio" style="background:transparent" data-a="transporte" data-i="' + bi + '" aria-label="Editar billete ' + (bi + 1) + '">' + IC.lapiz + '</button></div></div>';
+    });
+    h += '</div><div class="billetes-pie">';
+    if (lista.length > 1) { h += '<div class="puntos" role="tablist" aria-label="Billetes">'; lista.forEach(function(_, bi){ h += '<button class="punto' + (bi === 0 ? ' on' : '') + '" data-a="irBillete" data-i="' + bi + '" aria-label="Ver billete ' + (bi + 1) + '"></button>'; }); h += '</div>'; }
+    h += '<button class="mas-billete vidrio" data-a="transporte" data-i="nuevo">' + IC.masP + 'Otro billete</button></div></div>';
   }
   h += '</div></div>';
 
@@ -971,7 +1002,7 @@ function cabHoja(titulo){
   return '<div class="hoja-cab"><h2>' + titulo + '</h2><button class="circ peq" data-a="cerrar" aria-label="Cerrar">' + IC.x + '</button></div>';
 }
 function renderHoja(){
-  var t = S.hoja.tipo, h = '<div class="hoja-fondo"><div class="hoja">';
+  var t = S.hoja.tipo, h = '<div class="hoja-fondo"><div class="hoja hoja-' + t + '">';
   if (t === 'nuevo' || t === 'datos') h += hojaDatos(t);
   else if (t === 'plan') h += hojaPlan();
   else if (t === 'transporte') h += hojaTransporte();
@@ -1065,11 +1096,11 @@ function hojaPlan(){
   return h;
 }
 function hojaTransporte(){
-  var v = viaje(), tr = v.transporte;
+  var v = viaje(), lista = billetes(v), idx = S.hoja.idx, tr = (typeof idx === 'number') ? lista[idx] : null;
   var datos = S.hoja.prefill ? clone(S.hoja.prefill) : tr ? clone(tr) : {tipo: 'avion', ida: {fecha: v.inicio}, vuelta: {fecha: v.fin}};
   if (!TIPOS[datos.tipo]) datos.tipo = 'avion';
   var tx = TIPOS[datos.tipo];
-  var h = cabHoja('Tu <span class="it">transporte</span>') + avisoLeido();
+  var h = cabHoja(tr ? 'Tu <span class="it">billete</span>' : (lista.length ? 'Otro <span class="it">billete</span>' : 'Tu <span class="it">transporte</span>')) + avisoLeido();
   h += '<form data-f="transporte" style="display:flex;flex-direction:column;gap:14px" novalidate><div class="segm" role="radiogroup" aria-label="Tipo de transporte">';
   ['avion', 'tren', 'bus'].forEach(function(k){
     h += '<span><input type="radio" name="tipo" id="tipo-' + k + '" value="' + k + '"' + (datos.tipo === k ? ' checked' : '') + '><label for="tipo-' + k + '">' + TIPOS[k].nombre + '</label></span>';
@@ -1089,13 +1120,14 @@ function hojaTransporte(){
       '<label class="campo-et" for="' + k + '-compania"><span data-l="compania">' + tx.compania + '</span><input class="campo" id="' + k + '-compania" name="' + k + '_compania" value="' + esc(t.compania || '') + '"></label></div>';
   });
   h += '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar</button></div></form>';
-  if (tr) h += '<button class="boton b-texto" data-a="quitarTransporte">' + IC.basura + 'Quitar transporte</button>';
+  if (tr) h += '<button class="boton b-texto" data-a="quitarTransporte">' + IC.basura + 'Quitar este billete</button>';
   return h;
 }
 function hojaMaleta(){
   var v = viaje(), m = v.maleta || maletaBase(), c = conteoMaleta(v);
   var pm = c.tot ? Math.round(c.he / c.tot * 100) : 0;
   var h = cabHoja('Maleta y <span class="it">tareas</span>');
+  h += '<div class="maleta-cols"><div class="col-m">';
   h += '<div class="resumen-m"><div class="fila entre"><span class="etiq" style="color:var(--noche-2)">En la maleta</span><span class="num" style="font-size:14px;color:var(--noche-2)">' + pm + '% listo</span></div>' +
        '<div class="grande num">' + c.he + '<span style="font-size:18px;color:var(--noche-2)"> / ' + c.tot + ' artículos</span></div>' +
        '<div style="height:8px;border-radius:20px;background:var(--noche-3);margin-top:14px;overflow:hidden"><div style="height:8px;border-radius:20px;background:var(--naranja);width:' + pm + '%"></div></div></div>';
@@ -1122,8 +1154,12 @@ function hojaMaleta(){
     return s + '</div>';
   };
   m.grupos.forEach(function(g){ h += bloque(g.nombre, esc(g.nombre), g.items, false, 'Nuevo en ' + g.nombre.toLowerCase()); });
-  h += '<div style="margin-top:6px"></div>' + bloque('__tareas', 'Antes de <span class="it">salir</span>', m.tareas, true, 'Nueva tarea');
-  return h;
+  var ptt = c.tt ? Math.round(c.th / c.tt * 100) : 0;
+  h += '</div><div class="col-t"><div class="resumen-m resumen-t"><div class="fila entre"><span class="etiq">Antes de salir</span><span class="num" style="font-size:14px">' + ptt + '% hecho</span></div>' +
+       '<div class="grande num">' + c.th + '<span style="font-size:18px;opacity:.7"> / ' + c.tt + ' tareas</span></div>' +
+       '<div style="height:8px;border-radius:20px;background:rgba(19,33,42,.12);margin-top:14px;overflow:hidden"><div style="height:8px;border-radius:20px;background:var(--tinta);width:' + ptt + '%"></div></div></div>';
+  h += bloque('__tareas', 'Antes de <span class="it">salir</span>', m.tareas, true, 'Nueva tarea');
+  return h + '</div></div>';
 }
 
 /* ---------- acciones ---------- */
@@ -1193,7 +1229,12 @@ var acciones = {
   inicio: function(){ irA('inicio'); },
   cerrar: cerrarHoja,
   datos: function(){ abrirHoja({tipo: 'datos'}); },
-  transporte: function(){ abrirHoja({tipo: 'transporte'}); },
+  transporte: function(el){
+    var i = el && el.dataset ? el.dataset.i : undefined;
+    var n = billetes(viaje()).length;
+    abrirHoja({tipo: 'transporte', idx: (i === undefined || i === 'nuevo') ? (i === 'nuevo' || !n ? null : 0) : parseInt(i, 10)});
+  },
+  irBillete: function(el){ var c = $('#billetes'), b = c && c.children[+el.dataset.i]; if (b) c.scrollTo({left: b.offsetLeft - c.offsetLeft, behavior: 'smooth'}); },
   maleta: function(){
     var v = viaje(), m = v.maleta || maletaBase(), c = {__tareas: true};
     m.grupos.forEach(function(g){ c[g.nombre] = true; });
@@ -1215,7 +1256,7 @@ var acciones = {
     v.planes = (v.planes || []).filter(function(p){ return p.id !== id; });
     guardar(v); cerrarHoja();
   },
-  quitarTransporte: function(){ var v = clone(viaje()); v.transporte = null; guardar(v); cerrarHoja(); },
+  quitarTransporte: function(){ var v = clone(viaje()), l = billetes(v).slice(); if (typeof S.hoja.idx === 'number') l.splice(S.hoja.idx, 1); ponerBilletes(v, l); guardar(v); cerrarHoja(); },
   borrarViaje: function(){
     if (!S.confirmar) { S.confirmar = true; render(); return; }
     var v = viaje(); borrarViaje(v); S.activo = 0; irA('inicio'); toast('Viaje eliminado');
@@ -1278,7 +1319,7 @@ app.addEventListener('submit', function(e){
     if (d.fin < d.inicio) return error('La vuelta no puede ser antes que la ida.');
     if (S.hoja.tipo === 'nuevo') {
       var pend = S.hoja.pendiente || {};
-      var nv = {id: nuevoId('v'), titulo: d.titulo, subtitulo: d.subtitulo, inicio: d.inicio, fin: d.fin, transporte: pend.transporte || null, alojamientos: pend.alojamiento ? [pend.alojamiento] : [], planes: [], maleta: maletaBase(), fotoId: null, creado: Date.now()};
+      var nv = {id: nuevoId('v'), titulo: d.titulo, subtitulo: d.subtitulo, inicio: d.inicio, fin: d.fin, transporte: pend.transporte || null, billetes: pend.transporte ? [pend.transporte] : [], alojamientos: pend.alojamiento ? [pend.alojamiento] : [], planes: [], maleta: maletaBase(), fotoId: null, creado: Date.now()};
       guardar(nv);
       var fotoNueva = fd.get('foto');
       if (fotoNueva && fotoNueva.size) subirFoto(fotoNueva, nv.id);
@@ -1308,7 +1349,10 @@ app.addEventListener('submit', function(e){
       return {fecha: val(k + '_fecha'), hora: val(k + '_hora'), origen: val(k + '_origen').toUpperCase(), ciudadOrigen: val(k + '_ciudadOrigen'),
               destino: val(k + '_destino').toUpperCase(), ciudadDestino: val(k + '_ciudadDestino'), numero: val(k + '_numero'), asiento: val(k + '_asiento'), compania: val(k + '_compania')};
     };
-    v3.transporte = {tipo: val('tipo') || 'avion', ida: tramo('ida'), vuelta: tramo('vuelta')};
+    var nb = {tipo: val('tipo') || 'avion', ida: tramo('ida'), vuelta: tramo('vuelta')}, lb = billetes(v3).slice();
+    if (typeof S.hoja.idx === 'number' && lb[S.hoja.idx]) lb[S.hoja.idx] = nb; else lb.push(nb);
+    lb.sort(function(x, y){ return ((x.ida && x.ida.fecha) || '9') < ((y.ida && y.ida.fecha) || '9') ? -1 : 1; });
+    ponerBilletes(v3, lb);
     guardar(v3); cerrarHoja();
   } else if (tipo === 'alojamiento') {
     var nombre = val('nombre');
@@ -1390,7 +1434,7 @@ function aplicarLectura(d, desde, viajeId){
 
   if (desde === 'viaje' && viajeId) {
     S.viajeId = viajeId; S.vista = 'viaje';
-    if (tr) abrirHoja({tipo: 'transporte', prefill: tr, leido: true});
+    if (tr) abrirHoja({tipo: 'transporte', prefill: tr, leido: true, idx: null});
     else abrirHoja({tipo: 'alojamiento', alo: alo, leido: true});
     return;
   }
