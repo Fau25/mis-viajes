@@ -1,5 +1,5 @@
 // Mis viajes: funciona sin conexión. Cambia VERSION al publicar cambios.
-const VERSION = 'mis-viajes-v15';
+const VERSION = 'mis-viajes-v17';
 const BASE = ['./', './index.html', './manifest.webmanifest', './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png', './img/inicio-1.jpg', './img/inicio-2.jpg', './img/inicio-3.jpg'];
 
 self.addEventListener('install', e => {
