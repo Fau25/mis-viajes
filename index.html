@@ -356,6 +356,8 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 .ia-mini{width:32px;height:32px;flex-shrink:0;padding:0;border:none;border-radius:999px;background:var(--naranja);color:var(--tinta);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .ia-mini svg{width:16px;height:16px}
 .seccion{align-items:center}
+.bola-sync{width:10px;height:10px;border-radius:999px;background:#3FA86B;flex-shrink:0}
+.bola-sync.mal{background:var(--rojo)}
 </style>
 
 </head>
@@ -493,19 +495,142 @@ function tx(almacen, modo, fn){
 }
 function guardarLocal(){ try { localStorage.setItem(LS, JSON.stringify(S.viajes)); } catch (e) {} }
 function avisoGuardado(){ toast('No se pudo guardar. Libera espacio en el iPhone y vuelve a intentarlo.'); }
-function guardar(v){
-  v.actualizado = Date.now();
+function guardar(v, remoto){
+  if (!remoto) v.actualizado = Math.max(Date.now(), (v.actualizado || 0) + 1);
   var i = S.viajes.findIndex(function(x){ return x.id === v.id; });
   if (i < 0) S.viajes.push(v); else S.viajes[i] = v;
   if (BD) tx('viajes', 'readwrite', function(st){ return st.put(clone(v)); }).catch(avisoGuardado);
   else guardarLocal();
+  if (!remoto) Sync.marcar(v.id);
 }
-function borrarViaje(v){
+function borrarViaje(v, remoto){
   S.viajes = S.viajes.filter(function(x){ return x.id !== v.id; });
   if (BD) tx('viajes', 'readwrite', function(st){ return st.delete(v.id); }).catch(function(){});
   else guardarLocal();
-  if (v.fotoId) assets.delete(v.fotoId).catch(function(){});
+  if (v.fotoId && assets) assets.delete(v.fotoId).catch(function(){});
+  if (!remoto) Sync.borrado(v.id);
 }
+
+/* ---------- Sincronización entre dispositivos (a través del conserje) ---------- */
+var Sync = (function(){
+  var LSK = 'mis-viajes-sync';
+  var est = {sucios: {}, borrados: {}, fotos: {}, ultima: 0, iniciado: false, error: ''};
+  try { var g = JSON.parse(localStorage.getItem(LSK) || 'null'); if (g) est = Object.assign(est, g, {error: ''}); } catch (e) {}
+  var enCurso = false, otraVez = false, tProg = null, tCada = null;
+  function salvar(){ try { localStorage.setItem(LSK, JSON.stringify({sucios: est.sucios, borrados: est.borrados, fotos: est.fotos, ultima: est.ultima, iniciado: est.iniciado})); } catch (e) {} }
+  function activo(){ return !!claveIA(); }
+  function programar(ms){ if (!activo()) return; clearTimeout(tProg); tProg = setTimeout(ahora, ms == null ? 1500 : ms); }
+  function cab(extra){ return Object.assign({'X-Clave-App': claveIA()}, extra || {}); }
+  async function pedir(ruta, op){
+    var r = await fetch(CONSERJE + ruta, op);
+    if (r.status === 401) throw {code: 'clave'};
+    if (r.status === 503) throw {code: 'almacen'};
+    if (!r.ok) throw {code: 'red'};
+    return r;
+  }
+  async function subirFotos(){
+    var ids = Object.keys(est.fotos);
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i], b = null;
+      try { b = await assets.leer(id); } catch (e) {}
+      if (b) await pedir('/foto/' + encodeURIComponent(id), {method: 'PUT', headers: cab({'Content-Type': b.type || 'image/jpeg'}), body: b});
+      delete est.fotos[id]; salvar();
+    }
+  }
+  async function bajarFotos(){
+    var cambio = false;
+    for (var i = 0; i < S.viajes.length; i++) {
+      var id = S.viajes[i].fotoId;
+      if (!id || !BD || est.fotos[id]) continue;
+      var tiene = null; try { tiene = await assets.leer(id); } catch (e) {}
+      if (tiene) continue;
+      try {
+        var r = await fetch(CONSERJE + '/foto/' + encodeURIComponent(id), {headers: cab()});
+        if (!r.ok) continue;
+        var b = await r.blob();
+        await tx('fotos', 'readwrite', function(st){ return st.put(b, id); });
+        delete cargandoFoto[id]; cambio = true;
+      } catch (e) {}
+    }
+    return cambio;
+  }
+  function aplicar(res, enviados){
+    var cambio = false, antesId = (pendientes()[S.activo] || {}).id;
+    var servidor = {}; (res.viajes || []).forEach(function(v){ if (v && v.id) servidor[v.id] = v; });
+    var borr = res.borrados || {};
+    // Lo enviado y no modificado desde entonces ya está en la nube
+    Object.keys(enviados.sucios).forEach(function(id){ var l = viaje(id); if (!l || (l.actualizado || 0) === enviados.sucios[id]) delete est.sucios[id]; });
+    Object.keys(enviados.borrados).forEach(function(id){ if (est.borrados[id] === enviados.borrados[id]) delete est.borrados[id]; });
+    Object.keys(servidor).forEach(function(id){
+      if (est.sucios[id] || est.borrados[id]) return;
+      var r = servidor[id], l = viaje(id);
+      if (!l || (r.actualizado || 0) !== (l.actualizado || 0)) {
+        if (l && l.fotoId && l.fotoId !== r.fotoId && assets) assets.delete(l.fotoId).catch(function(){});
+        guardar(r, true); cambio = true;
+      }
+    });
+    S.viajes.slice().forEach(function(l){
+      if (servidor[l.id] || est.sucios[l.id]) return;
+      if (borr[l.id] && borr[l.id] >= (l.actualizado || 0)) { borrarViaje(l, true); cambio = true; }
+      else { est.sucios[l.id] = 1; otraVez = true; }
+    });
+    if (cambio && antesId) { var p = pendientes().findIndex(function(v){ return v.id === antesId; }); if (p >= 0) S.activo = p; }
+    if (S.activo >= pendientes().length) S.activo = Math.max(0, pendientes().length - 1);
+    return cambio;
+  }
+  function refrescar(){
+    if (S.hoja) { S.pendienteRender = true; return; }
+    if (S.vista === 'inicio' && arrastrando()) return;
+    render();
+  }
+  async function ahora(){
+    if (!activo() || !S.cargado) return;
+    if (enCurso) { otraVez = true; return; }
+    enCurso = true; otraVez = false;
+    try {
+      if (!est.iniciado) {
+        S.viajes.forEach(function(v){ est.sucios[v.id] = 1; if (v.fotoId) est.fotos[v.fotoId] = 1; });
+        est.iniciado = true; salvar();
+      }
+      if (BD) await subirFotos();
+      var enviados = {sucios: {}, borrados: Object.assign({}, est.borrados)};
+      var cambios = Object.keys(est.sucios).map(function(id){ var v = viaje(id); if (v) enviados.sucios[id] = v.actualizado || 0; return v; }).filter(Boolean);
+      var r = await pedir('/sync', {method: 'POST', headers: cab({'Content-Type': 'application/json'}), body: JSON.stringify({cambios: cambios, borrados: enviados.borrados})});
+      var res = await r.json();
+      var cambio = aplicar(res, enviados);
+      est.ultima = Date.now(); est.error = ''; salvar();
+      if (cambio) refrescar();
+      if (await bajarFotos()) refrescar();
+    } catch (e) {
+      est.error = (e && e.code) || 'red';
+    }
+    enCurso = false;
+    if (S.hoja && S.hoja.tipo === 'copia') render();
+    if (otraVez) programar(1500);
+  }
+  function marcar(id){ est.sucios[id] = 1; salvar(); programar(); }
+  function borrado(id){ delete est.sucios[id]; est.borrados[id] = Date.now(); salvar(); programar(); }
+  function foto(id){ est.fotos[id] = 1; salvar(); programar(); }
+  function arrancar(){
+    programar(300);
+    clearInterval(tCada);
+    tCada = setInterval(function(){ if (!document.hidden) ahora(); }, 15000);
+    document.addEventListener('visibilitychange', function(){ if (document.hidden) { if (Object.keys(est.sucios).length || Object.keys(est.borrados).length) ahora(); } else programar(200); });
+    window.addEventListener('online', function(){ programar(500); });
+  }
+  function texto(){
+    if (!activo()) return 'Desactivada: guarda arriba la contraseña de la app para sincronizar este dispositivo.';
+    if (est.error === 'almacen') return 'Falta conectar el almacén VIAJES en Cloudflare.';
+    if (est.error === 'clave') return 'La contraseña no coincide con la de Cloudflare.';
+    var pend = Object.keys(est.sucios).length + Object.keys(est.borrados).length + Object.keys(est.fotos).length;
+    if (est.error) return 'Sin conexión' + (pend ? ': hay cambios pendientes de enviar' : '') + '. Se reintentará sola.';
+    if (!est.ultima) return enCurso ? 'Sincronizando…' : 'Activada. Aún no se ha sincronizado.';
+    var m = Math.round((Date.now() - est.ultima) / 60000);
+    return 'Activada · última vez ' + (m < 1 ? 'hace un momento' : m === 1 ? 'hace 1 minuto' : m < 60 ? 'hace ' + m + ' minutos' : 'hace más de una hora') + (pend ? ' · ' + pend + ' cambio' + (pend === 1 ? '' : 's') + ' pendiente' + (pend === 1 ? '' : 's') : '') + '.';
+  }
+  return {ahora: ahora, marcar: marcar, borrado: borrado, foto: foto, arrancar: arrancar, texto: texto, programar: programar, error: function(){ return est.error; }};
+})();
+function arrastrando(){ return !!(gesto && gesto.y !== null && gesto.y !== undefined); }
 var urlsFoto = {}, cargandoFoto = {};
 assets = {
   upload: function(blob){
@@ -543,6 +668,7 @@ async function iniciar(){
     }
   } catch (e) { S.viajes = S.viajes || []; }
   S.cargado = true; render();
+  Sync.arrancar();
   if (BD) assets.leer('fondo-inicio').then(function(b){ if (b) ponerFondo(b); }).catch(function(){});
 }
 var urlFondo = null;
@@ -624,6 +750,7 @@ async function importar(file){
       if (!fotos[id] || !assets) continue;
       var blob = await (await fetch(fotos[id])).blob();
       await tx('fotos', 'readwrite', function(st){ return st.put(blob, id); });
+      Sync.foto(id);
     }
     datos.viajes.forEach(function(v){ if (v && v.id && v.titulo && v.inicio && v.fin) guardar(v); });
     cerrarHoja(); toast('Copia restaurada: ' + datos.viajes.length + (datos.viajes.length === 1 ? ' viaje' : ' viajes'));
@@ -1055,16 +1182,20 @@ function hojaCopia(){
   var tiene = !!claveIA();
   return cabHoja('<span class="it">Ajustes</span>') +
     '<h3 style="margin:6px 0 0;font-size:19px;font-weight:500">Leer documentos con IA</h3>' +
-    '<p class="suave" style="margin:0;line-height:1.5">Escribe la contraseña que guardaste en Cloudflare como <b>CLAVE_APP</b>. Se guarda solo en este iPhone.</p>' +
+    '<p class="suave" style="margin:0;line-height:1.5">Escribe la contraseña que guardaste en Cloudflare como <b>CLAVE_APP</b>. Se guarda solo en este dispositivo y sirve para leer documentos y para sincronizar.</p>' +
     '<form data-f="claveia" style="display:flex;gap:8px;align-items:flex-end" novalidate><label class="campo-et" for="clave-ia" style="flex:1">Contraseña de la app' +
     '<input class="campo" id="clave-ia" name="clave" type="password" autocomplete="off" placeholder="' + (tiene ? '•••••••• (guardada)' : 'Tu contraseña') + '"></label>' +
     '<button type="submit" class="pild activa" style="height:48px;flex-shrink:0">Guardar</button></form>' +
     (S.hoja && S.hoja.errorClave ? '<p style="margin:0;color:var(--rojo)">La contraseña no coincide con la de Cloudflare. Escríbela de nuevo.</p>' : '') +
+    '<h3 style="margin:14px 0 0;font-size:19px;font-weight:500">Sincronización</h3>' +
+    '<p class="suave" style="margin:0;line-height:1.5">Tus viajes y sus fotos se mantienen iguales en todos los dispositivos donde hayas guardado la contraseña de la app.</p>' +
+    '<div class="dato" style="justify-content:flex-start;gap:10px"><span class="bola-sync' + (Sync.error() ? ' mal' : '') + '" aria-hidden="true"></span><span>' + esc(Sync.texto()) + '</span></div>' +
+    (tiene ? '<button class="boton b-borde" data-a="sincronizar">Sincronizar ahora</button>' : '') +
     '<h3 style="margin:14px 0 0;font-size:19px;font-weight:500">Fondo del inicio</h3>' +
     '<p class="suave" style="margin:0;line-height:1.5">Pon una foto tuya detrás de las tarjetas del inicio o vuelve al paisaje original.</p>' +
     (assets ? '<div class="acciones" style="margin-top:0"><button class="boton b-tinta" data-a="fondoFoto">Elegir foto</button><button class="boton b-borde" data-a="fondoQuitar">Fotos originales</button></div>' : '') +
     '<h3 style="margin:14px 0 0;font-size:19px;font-weight:500">Copia de seguridad</h3>' +
-    '<p class="suave" style="margin:0;line-height:1.5">Tus viajes y fotos se guardan solo en este iPhone. Haz una copia de vez en cuando y guárdala en Archivos o iCloud Drive: así podrás recuperarlo todo si cambias de móvil o borras la app.</p>' +
+    '<p class="suave" style="margin:0;line-height:1.5">Por si acaso, haz una copia de vez en cuando y guárdala en Archivos o iCloud Drive.</p>' +
     '<button class="boton b-tinta" data-a="exportar">Guardar una copia</button>' +
     '<button class="boton b-borde" data-a="importar">Restaurar desde una copia</button>' +
     '<p class="suave" style="margin:0;font-size:14px;line-height:1.5">Al restaurar, los viajes de la copia se añaden a los que ya tienes; si un viaje ya existe, se sustituye por el de la copia.</p>';
@@ -1192,6 +1323,7 @@ function editarMaleta(fn){
 var acciones = {
   nuevo: function(){ abrirHoja({tipo: 'nuevo'}); },
   copia: function(){ abrirHoja({tipo: 'copia'}); },
+  sincronizar: function(){ toast('Sincronizando…'); Sync.ahora().then(function(){ toast(Sync.error() ? 'No se pudo sincronizar' : 'Sincronizado'); }); },
   fondoFoto: function(){ var i = $('#fondo-input'); i.value = ''; i.click(); },
   fondoQuitar: function(){ tx('fotos', 'readwrite', function(st){ return st.delete('fondo-inicio'); }).catch(function(){}); ponerFondo(null); toast('Fotos originales restaurado'); },
   leerItinerario: function(){
@@ -1400,7 +1532,7 @@ app.addEventListener('submit', function(e){
     var clave = String(fd.get('clave') || '').trim();
     if (!clave) return;
     try { localStorage.setItem(LS_CLAVE_IA, clave); } catch (e2) {}
-    S.hoja.errorClave = false; render(); toast('Contraseña guardada');
+    S.hoja.errorClave = false; render(); toast('Contraseña guardada'); Sync.programar(200);
   } else if (tipo === 'item') {
     var texto = (S.borrador || '').trim(), k = f.dataset.k;
     if (!texto) return;
@@ -1600,7 +1732,7 @@ async function subirFoto(file, idViaje){
     var v = viaje(id);
     if (v) {
       var anterior = v.fotoId;
-      v = clone(v); v.fotoId = r.id; v.color = await colorDeFoto(blob); guardar(v);
+      v = clone(v); v.fotoId = r.id; v.color = await colorDeFoto(blob); Sync.foto(r.id); guardar(v);
       if (anterior && anterior !== r.id) assets.delete(anterior).catch(function(){});
     }
   } catch (e) {
