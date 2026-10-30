@@ -1,0 +1,22 @@
+# Pasa las pruebas automáticas de Mis viajes en cada publicación.
+# El resultado se ve en la pestaña Actions de GitHub (✓ verde o ✗ rojo).
+name: Pruebas
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar Playwright
+        working-directory: pruebas
+        run: npm install && npx playwright install --with-deps chromium
+      - name: Pasar las pruebas
+        working-directory: pruebas
+        run: node --no-warnings pruebas.js
