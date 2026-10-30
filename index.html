@@ -514,10 +514,10 @@ function borrarViaje(v, remoto){
 /* ---------- Sincronización entre dispositivos (a través del conserje) ---------- */
 var Sync = (function(){
   var LSK = 'mis-viajes-sync';
-  var est = {sucios: {}, borrados: {}, fotos: {}, ultima: 0, iniciado: false, error: ''};
+  var est = {sucios: {}, borrados: {}, fotos: {}, ultima: 0, iniciado: false, cursor: 0, error: ''};
   try { var g = JSON.parse(localStorage.getItem(LSK) || 'null'); if (g) est = Object.assign(est, g, {error: ''}); } catch (e) {}
   var enCurso = false, otraVez = false, tProg = null, tCada = null;
-  function salvar(){ try { localStorage.setItem(LSK, JSON.stringify({sucios: est.sucios, borrados: est.borrados, fotos: est.fotos, ultima: est.ultima, iniciado: est.iniciado})); } catch (e) {} }
+  function salvar(){ try { localStorage.setItem(LSK, JSON.stringify({sucios: est.sucios, borrados: est.borrados, fotos: est.fotos, ultima: est.ultima, iniciado: est.iniciado, cursor: est.cursor})); } catch (e) {} }
   function activo(){ return !!claveIA(); }
   function programar(ms){ if (!activo()) return; clearTimeout(tProg); tProg = setTimeout(ahora, ms == null ? 1500 : ms); }
   function cab(extra){ return Object.assign({'X-Clave-App': claveIA()}, extra || {}); }
@@ -561,19 +561,26 @@ var Sync = (function(){
     // Lo enviado y no modificado desde entonces ya está en la nube
     Object.keys(enviados.sucios).forEach(function(id){ var l = viaje(id); if (!l || (l.actualizado || 0) === enviados.sucios[id]) delete est.sucios[id]; });
     Object.keys(enviados.borrados).forEach(function(id){ if (est.borrados[id] === enviados.borrados[id]) delete est.borrados[id]; });
+    // Solo se acepta lo que es más nuevo que la copia local; si la local es más nueva, se vuelve a enviar
     Object.keys(servidor).forEach(function(id){
       if (est.sucios[id] || est.borrados[id]) return;
-      var r = servidor[id], l = viaje(id);
-      if (!l || (r.actualizado || 0) !== (l.actualizado || 0)) {
+      var r = servidor[id], l = viaje(id), vr = r.actualizado || 0, vl = l ? (l.actualizado || 0) : -1;
+      if (vr > vl) {
         if (l && l.fotoId && l.fotoId !== r.fotoId && assets) assets.delete(l.fotoId).catch(function(){});
         guardar(r, true); cambio = true;
-      }
+      } else if (vl > vr) { est.sucios[id] = 1; otraVez = true; }
     });
-    S.viajes.slice().forEach(function(l){
-      if (servidor[l.id] || est.sucios[l.id]) return;
-      if (borr[l.id] && borr[l.id] >= (l.actualizado || 0)) { borrarViaje(l, true); cambio = true; }
-      else { est.sucios[l.id] = 1; otraVez = true; }
+    Object.keys(borr).forEach(function(id){
+      var l = viaje(id);
+      if (!l || est.sucios[id]) return;
+      if (borr[id] >= (l.actualizado || 0)) { borrarViaje(l, true); cambio = true; }
+      else { est.sucios[id] = 1; otraVez = true; }
     });
+    // En una respuesta completa, lo que falta en la nube se vuelve a enviar
+    if (res.completo !== false) S.viajes.forEach(function(l){
+      if (!servidor[l.id] && !borr[l.id] && !est.sucios[l.id]) { est.sucios[l.id] = 1; otraVez = true; }
+    });
+    if (typeof res.hasta === 'number') est.cursor = res.hasta;
     if (cambio && antesId) { var p = pendientes().findIndex(function(v){ return v.id === antesId; }); if (p >= 0) S.activo = p; }
     if (S.activo >= pendientes().length) S.activo = Math.max(0, pendientes().length - 1);
     return cambio;
@@ -595,7 +602,7 @@ var Sync = (function(){
       if (BD) await subirFotos();
       var enviados = {sucios: {}, borrados: Object.assign({}, est.borrados)};
       var cambios = Object.keys(est.sucios).map(function(id){ var v = viaje(id); if (v) enviados.sucios[id] = v.actualizado || 0; return v; }).filter(Boolean);
-      var r = await pedir('/sync', {method: 'POST', headers: cab({'Content-Type': 'application/json'}), body: JSON.stringify({cambios: cambios, borrados: enviados.borrados})});
+      var r = await pedir('/sync', {method: 'POST', headers: cab({'Content-Type': 'application/json'}), body: JSON.stringify({cambios: cambios, borrados: enviados.borrados, desde: est.cursor || 0})});
       var res = await r.json();
       var cambio = aplicar(res, enviados);
       est.ultima = Date.now(); est.error = ''; salvar();
@@ -1496,7 +1503,10 @@ app.addEventListener('submit', function(e){
     } else {
       var v = clone(viaje());
       v.titulo = d.titulo; v.subtitulo = d.subtitulo; v.inicio = d.inicio; v.fin = d.fin;
+      var ultimoDia = noches(d.inicio, d.fin) + 1, movidos = 0;
+      (v.planes || []).forEach(function(p){ if (p.dia > ultimoDia) { p.dia = ultimoDia; movidos++; } });
       guardar(v); cerrarHoja();
+      if (movidos) toast(movidos === 1 ? '1 plan pasado al último día del viaje' : movidos + ' planes pasados al último día del viaje');
       var fotoCambio = fd.get('foto');
       if (fotoCambio && fotoCambio.size) subirFoto(fotoCambio, v.id);
     }
