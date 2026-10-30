@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mis viajes</title>
 <meta name="description" content="Organizador personal de viajes">
+<meta name="robots" content="noindex">
 <meta name="theme-color" content="#F8F8F8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -358,13 +359,17 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 .seccion{align-items:center}
 .bola-sync{width:10px;height:10px;border-radius:999px;background:#3FA86B;flex-shrink:0}
 .bola-sync.mal{background:var(--rojo)}
+.pestanas{display:contents}
+.cab-titulo h1.t1x{margin:0;font-family:var(--sans)}
+.leyendo + .boton{align-self:center;min-width:160px}
 </style>
 
 </head>
 <body>
 <div class="capa-fondo" id="fondo-a" aria-hidden="true"></div><div class="capa-fondo" id="fondo-b" aria-hidden="true"></div>
-<div class="app" id="app"><div class="cargando">Cargando tus viajes…</div></div>
-<div class="toast" id="toast" hidden></div>
+<main class="app" id="app"><div class="cargando">Cargando tus viajes…</div></main>
+<noscript><p style="padding:24px;font-family:sans-serif">Mis viajes necesita JavaScript activado para funcionar.</p></noscript>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <input type="file" id="importar" accept="application/json,.json" hidden>
 <input type="file" id="reserva" accept="application/pdf,.pdf,image/*" multiple hidden>
 <input type="file" id="fondo-input" accept="image/*" hidden>
@@ -494,7 +499,7 @@ function tx(almacen, modo, fn){
   });
 }
 function guardarLocal(){ try { localStorage.setItem(LS, JSON.stringify(S.viajes)); } catch (e) {} }
-function avisoGuardado(){ toast('No se pudo guardar. Libera espacio en el iPhone y vuelve a intentarlo.'); }
+function avisoGuardado(){ toast('No se pudo guardar. Libera espacio en este dispositivo y vuelve a intentarlo.'); }
 function guardar(v, remoto){
   if (!remoto) v.actualizado = Math.max(Date.now(), (v.actualizado || 0) + 1);
   var i = S.viajes.findIndex(function(x){ return x.id === v.id; });
@@ -772,7 +777,11 @@ function irA(vista, extra){
   if (extra) for (var k in extra) S[k] = extra[k];
   render(); try { window.scrollTo(0, 0); } catch (e) {}
 }
-function abrirHoja(h){ S.hoja = h; S.confirmar = false; render(); try { window.scrollTo(0, 0); } catch (e) {} }
+function abrirHoja(h){
+  if (!S.hoja) S.focoAntes = document.activeElement;
+  S.hoja = h; S.confirmar = false; render(); try { window.scrollTo(0, 0); } catch (e) {}
+  var hj = $('.hoja'); if (hj) { try { hj.focus({preventScroll: true}); } catch (e) {} }
+}
 function cerrarHoja(){
   S.hoja = null; S.anadiendo = null; S.borrador = ''; S.confirmar = false; S.pendienteRender = false;
   render(); try { window.scrollTo(0, 0); } catch (e) {}
@@ -1062,7 +1071,7 @@ function renderViaje(){
   if (assets) h += '<label class="circ vidrio" style="position:relative;cursor:pointer" aria-label="Cambiar foto de portada"><input type="file" accept="image/*" id="foto" style="position:absolute;width:1px;height:1px;opacity:0">' + IC.camara + '</label>';
   h += '</div>';
   if (S.subiendo) h += '<div class="subiendo" role="status">Subiendo foto…</div>';
-  h += '<div class="contenido"><div class="cab-titulo"><div style="min-width:0"><div class="t1x">' + esc(v.titulo) + '</div>' +
+  h += '<div class="contenido"><div class="cab-titulo"><div style="min-width:0"><h1 class="t1x">' + esc(v.titulo) + '</h1>' +
        (v.subtitulo ? '<div class="t2x">' + esc(v.subtitulo) + '</div>' : '') +
        '<div class="t3x num">' + esc(rango(v)) + ' · ' + textoNoches(n) + '</div></div>' +
        '<button class="circ peq vidrio" data-a="datos" aria-label="Editar datos del viaje">' + IC.lapiz + '</button></div>';
@@ -1084,16 +1093,16 @@ function renderViaje(){
       '<button class="circ peq vidrio" style="background:transparent" data-a="transporte" data-i="' + bi + '" aria-label="Editar billete ' + (bi + 1) + '">' + IC.lapiz + '</button></div></div>';
     });
     h += '</div><div class="billetes-pie">';
-    if (lista.length > 1) { h += '<div class="puntos" role="tablist" aria-label="Billetes">'; lista.forEach(function(_, bi){ h += '<button class="punto' + (bi === 0 ? ' on' : '') + '" data-a="irBillete" data-i="' + bi + '" aria-label="Ver billete ' + (bi + 1) + '"></button>'; }); h += '</div>'; }
+    if (lista.length > 1) { h += '<div class="puntos" role="group" aria-label="Billetes">'; lista.forEach(function(_, bi){ h += '<button class="punto' + (bi === 0 ? ' on' : '') + '" data-a="irBillete" data-i="' + bi + '" aria-label="Ver billete ' + (bi + 1) + '"></button>'; }); h += '</div>'; }
     h += '<button class="mas-billete vidrio" data-a="transporte" data-i="nuevo">' + IC.masP + 'Otro billete</button></div></div>';
   }
   h += '</div></div>';
 
   h += '<div class="ficha-der"><div class="pad viaje-pad" style="display:flex;flex-direction:column;gap:16px;padding-top:20px">';
   var enAlo = S.pestana === 'alojamiento';
-  h += '<div class="menu" role="tablist" aria-label="Secciones del viaje">' +
+  h += '<div class="menu"><div class="pestanas" role="tablist" aria-label="Secciones del viaje">' +
        '<button class="pild' + (enAlo ? '' : ' activa') + '" role="tab" aria-selected="' + !enAlo + '" data-a="pestPlan" aria-label="Itinerario">' + IC.pin + '</button>' +
-       '<button class="pild' + (enAlo ? ' activa' : '') + '" role="tab" aria-selected="' + enAlo + '" data-a="pestAlo" aria-label="Alojamiento">' + IC.casa + '</button>' +
+       '<button class="pild' + (enAlo ? ' activa' : '') + '" role="tab" aria-selected="' + enAlo + '" data-a="pestAlo" aria-label="Alojamiento">' + IC.casa + '</button></div>' +
        '<button class="pild" data-a="maleta" aria-label="Maleta y tareas">' + IC.maleta + '</button>' +
        '<button class="pild leer" data-a="leerReserva">' + IC.chispa + 'Leer documentos</button></div>';
   h += '<div class="cuerpo-viaje' + (enAlo ? ' ver-alo' : '') + '"><section class="sec-plan" aria-label="Itinerario">';
@@ -1146,10 +1155,10 @@ function renderViaje(){
 
 /* Hojas */
 function cabHoja(titulo){
-  return '<div class="hoja-cab"><h2>' + titulo + '</h2><button class="circ peq" data-a="cerrar" aria-label="Cerrar">' + IC.x + '</button></div>';
+  return '<div class="hoja-cab"><h2 id="hoja-titulo" aria-level="1">' + titulo + '</h2><button class="circ peq" data-a="cerrar" aria-label="Cerrar">' + IC.x + '</button></div>';
 }
 function renderHoja(){
-  var t = S.hoja.tipo, h = '<div class="hoja-fondo"><div class="hoja hoja-' + t + '">';
+  var t = S.hoja.tipo, h = '<div class="hoja-fondo"><div class="hoja hoja-' + t + '" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo" tabindex="-1">';
   if (t === 'nuevo' || t === 'datos') h += hojaDatos(t);
   else if (t === 'plan') h += hojaPlan();
   else if (t === 'transporte') h += hojaTransporte();
@@ -1164,9 +1173,10 @@ function avisoLeido(){
   return S.hoja && S.hoja.leido ? '<div class="dato" style="background:var(--melocoton);justify-content:flex-start">' + IC.chispa + '<span>Datos leídos de tu reserva. Revísalos antes de guardar.</span></div>' : '';
 }
 function hojaLeyendo(){
-  return '<div class="hoja-cab"><h2>Leyendo tu <span class="it">reserva</span></h2></div>' +
+  return '<div class="hoja-cab"><h2 id="hoja-titulo" aria-level="1">Leyendo tus <span class="it">documentos</span></h2></div>' +
     '<div class="leyendo" role="status"><span class="giro" aria-hidden="true"></span><p style="margin:0;font-size:17px">' + (S.hoja.total > 1 ? 'Leyendo ' + S.hoja.n + ' de ' + S.hoja.total + '…' : 'Un momento…') + '</p>' +
-    '<p class="suave" style="margin:0;font-size:14px;line-height:1.5;text-align:center">' + (S.hoja.itinerario ? 'La IA está sacando los planes de cada día.' : 'La IA está sacando las fechas, horas y datos del documento.') + ' Suele tardar entre 5 y 20 segundos.</p></div>';
+    '<p class="suave" style="margin:0;font-size:14px;line-height:1.5;text-align:center">' + (S.hoja.itinerario ? 'La IA está sacando los planes de cada día.' : 'La IA está sacando las fechas, horas y datos del documento.') + ' Suele tardar entre 5 y 20 segundos.</p></div>' +
+    '<button class="boton b-borde" data-a="cancelarLectura">Cancelar</button>';
 }
 function hojaAlo(){
   var a = S.hoja.alo || {};
@@ -1210,7 +1220,7 @@ function hojaCopia(){
 function hojaDatos(t){
   var v = t === 'datos' ? viaje() : (S.hoja.prefill || {titulo: '', subtitulo: '', inicio: '', fin: ''});
   var h = cabHoja(t === 'nuevo' ? 'Nuevo <span class="it">viaje</span>' : 'Datos del <span class="it">viaje</span>');
-  if (t === 'nuevo' && !S.hoja.leido) h += '<button class="boton b-tinta" data-a="leerReserva">' + IC.chispa + 'Rellenar desde una reserva</button><p class="suave" style="margin:-4px 0 0;font-size:14px;text-align:center">PDF o foto del billete o del hotel</p>';
+  if (t === 'nuevo' && !S.hoja.leido) h += '<button class="boton b-tinta" data-a="leerReserva">' + IC.chispa + 'Rellenar desde documentos</button><p class="suave" style="margin:-4px 0 0;font-size:14px;text-align:center">PDF o foto del billete o del hotel</p>';
   if (t === 'nuevo' && S.hoja.leido) {
     var extra = S.hoja.pendiente || {};
     h += avisoLeido();
@@ -1277,7 +1287,7 @@ function hojaTransporte(){
       c('asiento', 'Asiento') + '</div>' +
       '<label class="campo-et" for="' + k + '-compania"><span data-l="compania">' + tx.compania + '</span><input class="campo" id="' + k + '-compania" name="' + k + '_compania" value="' + esc(t.compania || '') + '"></label></div>';
   });
-  h += '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar</button></div></form>';
+  h += '<p id="f-error" style="margin:0;color:var(--rojo)" hidden></p><div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar</button></div></form>';
   if (tr) h += '<button class="boton b-texto" data-a="quitarTransporte">' + IC.basura + 'Quitar este billete</button>';
   return h;
 }
@@ -1332,7 +1342,7 @@ var acciones = {
   copia: function(){ abrirHoja({tipo: 'copia'}); },
   sincronizar: function(){ toast('Sincronizando…'); Sync.ahora().then(function(){ toast(Sync.error() ? 'No se pudo sincronizar' : 'Sincronizado'); }); },
   fondoFoto: function(){ var i = $('#fondo-input'); i.value = ''; i.click(); },
-  fondoQuitar: function(){ tx('fotos', 'readwrite', function(st){ return st.delete('fondo-inicio'); }).catch(function(){}); ponerFondo(null); toast('Fotos originales restaurado'); },
+  fondoQuitar: function(){ tx('fotos', 'readwrite', function(st){ return st.delete('fondo-inicio'); }).catch(function(){}); ponerFondo(null); toast('Fotos originales restauradas'); },
   leerItinerario: function(){
     if (!claveIA()) { abrirHoja({tipo: 'copia'}); toast('Primero guarda la contraseña de la app.'); return; }
     S.leerModo = 'itinerario'; S.leerDesde = 'viaje';
@@ -1399,6 +1409,7 @@ var acciones = {
     var n = billetes(viaje()).length;
     abrirHoja({tipo: 'transporte', idx: (i === undefined || i === 'nuevo') ? (i === 'nuevo' || !n ? null : 0) : parseInt(i, 10)});
   },
+  cancelarLectura: function(){ lectura.cancelada = true; if (lectura.ctrl) try { lectura.ctrl.abort(); } catch (e) {} },
   quitarLeido: function(el){ var l = el.dataset.k === 'b' ? S.hoja.billetes : S.hoja.alojamientos; l.splice(+el.dataset.i, 1); render(); },
   guardarLeido: function(){
     var v = clone(viaje()), bs = S.hoja.billetes, als = S.hoja.alojamientos;
@@ -1526,6 +1537,7 @@ app.addEventListener('submit', function(e){
               destino: val(k + '_destino').toUpperCase(), ciudadDestino: val(k + '_ciudadDestino'), numero: val(k + '_numero'), asiento: val(k + '_asiento'), compania: val(k + '_compania')};
     };
     var nb = {tipo: val('tipo') || 'avion', ida: tramo('ida'), vuelta: tramo('vuelta')}, lb = billetes(v3).slice();
+    if (!nb.ida.origen && !nb.ida.destino && !nb.ida.ciudadOrigen && !nb.ida.ciudadDestino && !nb.ida.numero) return error('Escribe al menos el origen o el destino de la ida.');
     if (typeof S.hoja.idx === 'number' && lb[S.hoja.idx]) lb[S.hoja.idx] = nb; else lb.push(nb);
     ponerBilletes(v3, lb);
     guardar(v3); cerrarHoja();
@@ -1576,12 +1588,24 @@ function mensajeError(res){
          res.error === 'falta_clave_ia' || (res.error === 'ia' && (res.estado === 401 || res.estado === 403)) ? 'La clave de Claude guardada en Cloudflare no es válida.' :
          'No se pudo leer la reserva. Revisa la conexión y vuelve a intentarlo.';
 }
+var lectura = {ctrl: null, cancelada: false};
 async function leerUno(file, extra){
   var esPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
   if (esPdf && file.size > 10 * 1024 * 1024) return {error: 'El PDF «' + file.name + '» pesa más de 10 MB.'};
   var blob = esPdf ? file : await reducir(file);
   var cuerpo = Object.assign({archivo: await aBase64(blob), tipo: esPdf ? 'application/pdf' : 'image/jpeg'}, extra || {});
-  var r = await fetch(CONSERJE, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Clave-App': claveIA()}, body: JSON.stringify(cuerpo)});
+  if (lectura.cancelada) return {cancelada: true};
+  lectura.ctrl = window.AbortController ? new AbortController() : null;
+  var tLimite = setTimeout(function(){ if (lectura.ctrl) { lectura.porTiempo = true; lectura.ctrl.abort(); } }, 90000);
+  var r;
+  try { r = await fetch(CONSERJE, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Clave-App': claveIA()}, body: JSON.stringify(cuerpo), signal: lectura.ctrl ? lectura.ctrl.signal : undefined}); }
+  catch (e) {
+    clearTimeout(tLimite);
+    if (lectura.cancelada) return {cancelada: true};
+    if (lectura.porTiempo) { lectura.porTiempo = false; return {error: 'La lectura ha tardado demasiado. Revisa la conexión y vuelve a intentarlo.'}; }
+    throw e;
+  }
+  clearTimeout(tLimite);
   var res = {}; try { res = await r.json(); } catch (e) {}
   if (r.status === 401) return {clave: true};
   if (!r.ok || !res.ok || !res.datos) return {error: mensajeError(res)};
@@ -1599,6 +1623,7 @@ function limpiarBillete(t){
 }
 function claveBillete(b){ return [b.ida.fecha, b.ida.origen, b.ida.destino, b.ida.numero, b.vuelta.fecha, b.vuelta.origen].join('|'); }
 async function procesarReserva(files){
+  lectura.cancelada = false; lectura.porTiempo = false;
   var desde = S.leerDesde, hojaAntes = S.hoja, viajeId = S.viajeId;
   var volver = function(){ if (hojaAntes) { S.hoja = hojaAntes; render(); } else cerrarHoja(); };
   var bs = [], als = [], vg = {}, errores = [], vistos = {};
@@ -1606,6 +1631,7 @@ async function procesarReserva(files){
     abrirHoja({tipo: 'leyendo', n: k + 1, total: files.length});
     var r;
     try { r = await leerUno(files[k]); } catch (e) { r = {error: 'No se pudo leer la reserva. Revisa la conexión y vuelve a intentarlo.'}; }
+    if (r.cancelada) { volver(); toast('Lectura cancelada'); return; }
     if (r.clave) { abrirHoja({tipo: 'copia', errorClave: true}); return; }
     if (r.error) { errores.push(r.error); continue; }
     var d = r.datos;
@@ -1644,6 +1670,7 @@ async function procesarReserva(files){
   abrirHoja({tipo: 'nuevo', leido: true, prefill: {titulo: vg.titulo || destino || '', subtitulo: vg.subtitulo || '', inicio: inicio, fin: fin}, pendiente: {billetes: bs, alojamientos: als}});
 }
 async function procesarItinerario(files){
+  lectura.cancelada = false; lectura.porTiempo = false;
   var viajeId = S.viajeId, v0 = viaje(viajeId);
   if (!v0) return;
   var hojaAntes = S.hoja, total = noches(v0.inicio, v0.fin) + 1, nuevos = [], errores = [], sinPlanes = 0;
@@ -1652,6 +1679,7 @@ async function procesarItinerario(files){
     var r;
     try { r = await leerUno(files[k], {modo: 'itinerario', inicio: v0.inicio, fin: v0.fin, destino: [v0.titulo, v0.subtitulo].filter(Boolean).join(' · ')}); }
     catch (e) { r = {error: 'No se pudo leer el documento. Revisa la conexión y vuelve a intentarlo.'}; }
+    if (r.cancelada) { S.hoja = null; render(); toast('Lectura cancelada'); return; }
     if (r.clave) { abrirHoja({tipo: 'copia', errorClave: true}); return; }
     if (r.error) { errores.push(r.error); continue; }
     var ps = (r.datos && Array.isArray(r.datos.planes)) ? r.datos.planes : [];
@@ -1714,7 +1742,8 @@ function hojaRevisar(){
   return h;
 }
 app.addEventListener('keydown', function(e){
-  if (e.key === 'Escape' && S.anadiendo) { S.anadiendo = null; S.borrador = ''; render(); }
+  if (e.key === 'Escape' && S.anadiendo) { S.anadiendo = null; S.borrador = ''; render(); return; }
+  if (e.key === 'Escape' && S.hoja && S.hoja.tipo !== 'leyendo') { e.preventDefault(); var vuelta = S.focoAntes; cerrarHoja(); if (vuelta && document.contains(vuelta)) vuelta.focus(); }
 });
 
 /* ---------- foto de portada ---------- */
