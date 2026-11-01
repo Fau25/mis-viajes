@@ -77,6 +77,12 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
     igual(/Día 3/.test(await A.locator('.plan').first().innerText()), true, 'plan en el día 3');
   });
 
+  await prueba('Los planes del mismo día van en una sola tarjeta', async () => {
+    await A.click('[data-a="nuevoPlan"]'); await A.selectOption('#p-dia', '3'); await A.fill('#p-lugar', 'Fontana di Trevi'); await A.click('.hoja button[type=submit]'); await A.waitForTimeout(300);
+    igual(await A.locator('.dia-plan').count(), 1, 'tarjetas de día');
+    igual(await A.locator('.dia-plan .plan-item').count(), 2, 'planes en la tarjeta');
+  });
+
   await prueba('Artículos con el mismo nombre se marcan por separado', async () => {
     await A.click('.menu [data-a="maleta"]'); await A.waitForTimeout(300);
     await A.click('[data-a="plegar"] >> nth=0'); await A.click('[data-a="empezarItem"]'); await A.fill('#nuevo-item', 'Cargador'); await A.press('#nuevo-item', 'Enter'); await A.waitForTimeout(200);

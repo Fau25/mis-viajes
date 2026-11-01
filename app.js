@@ -758,14 +758,19 @@ function renderViaje(){
   h += '<div class="seccion" style="margin-top:4px"><span class="tit-ia"><h2>Itinerario</h2><button class="ia-mini" data-a="leerItinerario" aria-label="Leer un itinerario desde un documento" title="Leer itinerario de un documento">' + IC.chispa + '</button></span>' + (planes.length ? '<span class="suave num" style="font-size:14px">' + Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan</span>' : '') + '</div>';
   h += '<div style="display:flex;flex-direction:column;gap:10px">';
   var llegada = false;
-  planes.forEach(function(p){
-    var d = diaFecha(v, p.dia);
-    var chip = '';
-    if (tr && p.dia === 1 && !llegada && tr.ida && tr.ida.ciudadDestino) { chip = '<span class="llegada">' + IC.pinP + 'Llegada a ' + esc(tr.ida.ciudadDestino) + '</span>'; llegada = true; }
-    h += '<button class="plan" data-a="editarPlan" data-id="' + esc(p.id) + '" aria-label="Editar plan: ' + esc(p.titulo) + '"><span class="txt">' +
-      '<span class="suave" style="display:block;font-size:13px">Día ' + p.dia + '</span><span class="lugar">' + esc(p.titulo) + '</span>' +
-      (p.descripcion ? '<span class="desc">' + esc(p.descripcion) + '</span>' : '') + chip + '</span>' +
-      '<span class="fecha-dia"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></button>';
+  // Una tarjeta por día con todos sus planes dentro; cada plan se toca para editarlo
+  var porDia = [];
+  planes.forEach(function(p){ var g = porDia[porDia.length - 1]; if (g && g.dia === p.dia) g.planes.push(p); else porDia.push({dia: p.dia, planes: [p]}); });
+  porDia.forEach(function(g){
+    var d = diaFecha(v, g.dia);
+    h += '<div class="plan dia-plan" role="group" aria-label="Día ' + g.dia + '"><div class="txt"><span class="suave dia-et">Día ' + g.dia + '</span><div class="dia-lista">';
+    g.planes.forEach(function(p){
+      var chip = '';
+      if (tr && p.dia === 1 && !llegada && tr.ida && tr.ida.ciudadDestino) { chip = '<span class="llegada">' + IC.pinP + 'Llegada a ' + esc(tr.ida.ciudadDestino) + '</span>'; llegada = true; }
+      h += '<button class="plan-item" data-a="editarPlan" data-id="' + esc(p.id) + '" aria-label="Editar plan: ' + esc(p.titulo) + '"><span class="lugar">' + esc(p.titulo) + '</span>' +
+        (p.descripcion ? '<span class="desc">' + esc(p.descripcion) + '</span>' : '') + chip + '</button>';
+    });
+    h += '</div></div><span class="fecha-dia"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></div>';
   });
   if (!planes.length) h += '<button class="boton b-tinta" data-a="nuevoPlan" style="height:52px">' + IC.mas + 'Añadir itinerario</button>';
   else h += '<button class="dash" data-a="nuevoPlan">' + IC.mas + 'Añadir plan</button>';
