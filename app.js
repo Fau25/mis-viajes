@@ -758,7 +758,7 @@ function renderViaje(){
   h += '<div class="cuerpo-viaje' + (enAlo ? ' ver-alo' : '') + '"><section class="sec-plan" aria-label="Itinerario">';
   var planes = (v.planes || []).slice().sort(function(x, y){ return x.dia - y.dia || (x.creado || 0) - (y.creado || 0); });
   var dias = {}; planes.forEach(function(p){ dias[p.dia] = true; });
-  h += '<div class="seccion" style="margin-top:4px"><span class="tit-ia"><h2>Itinerario</h2><button class="ia-mini" data-a="leerItinerario" aria-label="Leer un itinerario desde un documento" title="Leer itinerario de un documento">' + IC.chispa + '</button><button class="ia-mini ruta-mini" data-a="editarRuta" aria-label="Añadir rutas" title="Añadir rutas">' + IC.ruta + '</button></span>' + (planes.length ? '<span class="suave num" style="font-size:14px">' + Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan</span>' : '') + '</div>';
+  h += '<div class="seccion" style="margin-top:4px"><span class="tit-ia"><h2>Itinerario</h2><button class="ia-mini" data-a="leerItinerario" aria-label="Leer un itinerario desde un documento" title="Leer itinerario de un documento">' + IC.chispa + '</button><button class="ia-mini ruta-mini" data-a="editarRuta" aria-label="Añadir rutas" title="Añadir rutas">' + IC.ruta + '</button></span></div>';
   h += '<div style="display:flex;flex-direction:column;gap:10px">';
   var llegada = false;
   // Una tarjeta por día con todos sus planes dentro; cada plan se toca para editarlo
@@ -766,9 +766,19 @@ function renderViaje(){
   planes.forEach(function(p){ (mapaDias[p.dia] = mapaDias[p.dia] || []).push(p); });
   Object.keys(rutas).forEach(function(d){ if (rutas[d] && rutas[d].url) mapaDias[d] = mapaDias[d] || []; });
   var porDia = Object.keys(mapaDias).map(Number).sort(function(a, b){ return a - b; }).map(function(d){ return {dia: d, planes: mapaDias[d]}; });
+  // Días desplegables: plegados por defecto; se recuerda cuáles están abiertos mientras la app está abierta
+  var abiertos = (S.diasAbiertos = S.diasAbiertos || {})[v.id] = (S.diasAbiertos[v.id] || {});
+  var todosAbiertos = porDia.length && porDia.every(function(g){ return abiertos[g.dia]; });
+  if (porDia.length) h += '<div class="dias-ctrl"><span class="suave num">' + (planes.length ? Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan' : '') + '</span>' +
+    '<button class="dias-todos" data-a="plegarTodos" data-abrir="' + (todosAbiertos ? '0' : '1') + '">' + (todosAbiertos ? 'Cerrar todos' : 'Abrir todos') + '</button></div>';
   porDia.forEach(function(g){
-    var d = diaFecha(v, g.dia);
-    h += '<div class="plan dia-plan" role="group" aria-label="Día ' + g.dia + '"><div class="txt"><span class="suave dia-et">Día ' + g.dia + '</span><div class="dia-lista">';
+    var d = diaFecha(v, g.dia), abierto = !!abiertos[g.dia], idCuerpo = 'dia-' + g.dia + '-cuerpo';
+    var resumen = g.planes.length ? (g.planes.length === 1 ? '1 plan' : g.planes.length + ' planes') + ' · ' + g.planes.map(function(p){ return p.titulo; }).join(', ') : 'Sin planes';
+    h += '<div class="plan dia-plan' + (abierto ? ' abierto' : '') + '" role="group" aria-label="Día ' + g.dia + '"><div class="txt">' +
+      '<button class="dia-cab" data-a="plegarDia" data-dia="' + g.dia + '" aria-expanded="' + abierto + '" aria-controls="' + idCuerpo + '">' +
+      '<span class="suave dia-et">Día ' + g.dia + (rutas[g.dia] && rutas[g.dia].url && !abierto ? '<span class="dia-con-ruta" title="Tiene ruta">' + IC.ruta + '</span>' : '') + '</span>' +
+      (abierto ? '' : '<span class="dia-resumen">' + esc(resumen) + '</span>') + '<span class="dia-chev" aria-hidden="true">' + (abierto ? IC.chevA : IC.chevB) + '</span></button>' +
+      '<div class="dia-cuerpo" id="' + idCuerpo + '"' + (abierto ? '' : ' hidden') + '><div class="dia-lista">';
     g.planes.forEach(function(p){
       var chip = '';
       if (tr && p.dia === 1 && !llegada && tr.ida && tr.ida.ciudadDestino) { chip = '<span class="llegada">' + IC.pinP + 'Llegada a ' + esc(tr.ida.ciudadDestino) + '</span>'; llegada = true; }
@@ -781,7 +791,7 @@ function renderViaje(){
       '<button class="ruta-editar" data-a="editarRuta" data-dia="' + g.dia + '" aria-label="Cambiar la ruta del día ' + g.dia + '">' + IC.lapiz + '</button></div>';
     else h += '<button class="ruta-anadir" data-a="editarRuta" data-dia="' + g.dia + '">' + IC.ruta + 'Añadir ruta</button>';
     h += '<button class="borrar-dia" data-a="borrarDia" data-dia="' + g.dia + '" aria-label="Eliminar el día ' + g.dia + ' entero">' + IC.basura + '</button></div>';
-    h += '</div></div><span class="fecha-dia"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></div>';
+    h += '</div></div></div><span class="fecha-dia" data-a="plegarDia" data-dia="' + g.dia + '" aria-hidden="true"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></div>';
   });
   if (!planes.length) h += '<button class="boton b-tinta" data-a="nuevoPlan" style="height:52px">' + IC.mas + 'Añadir itinerario</button>';
   else h += '<button class="dash" data-a="nuevoPlan">' + IC.mas + 'Añadir plan</button>';
@@ -1201,6 +1211,17 @@ var acciones = {
     if (!d) { var n = noches(v.inicio, v.fin) + 1, r = v.rutas || {}; d = 1; while (r[d] && r[d].url && d < n) d++; }
     abrirHoja({tipo: 'ruta', dia: d});
   },
+  plegarDia: function(el){
+    var ab = (S.diasAbiertos = S.diasAbiertos || {})[S.viajeId] = (S.diasAbiertos[S.viajeId] || {}), d = +el.dataset.dia;
+    if (ab[d]) delete ab[d]; else ab[d] = true;
+    render();
+    var b = document.querySelector('.dia-cab[data-dia="' + d + '"]'); if (b) b.focus({preventScroll: true});
+  },
+  plegarTodos: function(el){
+    var v = viaje(), ab = (S.diasAbiertos = S.diasAbiertos || {})[v.id] = {};
+    if (el.dataset.abrir === '1') { (v.planes || []).forEach(function(p){ ab[p.dia] = true; }); Object.keys(v.rutas || {}).forEach(function(d){ ab[d] = true; }); }
+    render();
+  },
   borrarDia: function(el){
     var dia = +el.dataset.dia, antes = clone(viaje()), v = clone(antes);
     var n = (v.planes || []).filter(function(p){ return p.dia === dia; }).length;
@@ -1342,6 +1363,7 @@ app.addEventListener('submit', function(e){
   } else if (tipo === 'plan') {
     var titulo = val('titulo');
     if (!titulo) return error('Escribe el lugar o la actividad.');
+    var diaAbrir = parseInt(fd.get('dia'), 10) || 1; ((S.diasAbiertos = S.diasAbiertos || {})[S.viajeId] = (S.diasAbiertos[S.viajeId] || {}))[diaAbrir] = true;
     var v2 = clone(viaje()), p = S.hoja.plan;
     var datos = {dia: parseInt(fd.get('dia'), 10) || 1, titulo: titulo, descripcion: val('descripcion')};
     v2.planes = v2.planes || [];

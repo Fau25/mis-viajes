@@ -409,6 +409,19 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 .ia-maleta.preparando > span:nth-child(2){flex:1;min-width:0}
 .ia-maleta.preparando .giro{width:20px;height:20px;flex-shrink:0}
 .ia-maleta.preparando .boton{margin-left:auto;height:36px}
+/* Días desplegables */
+.dias-ctrl{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-6px;font-size:14px}
+.dias-todos{border:none;background:none;padding:6px 0;color:var(--tinta);font:inherit;font-size:14px;font-weight:500;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.dia-cab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;border:none;background:none;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer;position:relative;padding-right:28px}
+.dia-plan:not(.abierto) .dia-cab{min-height:52px;justify-content:center}
+.dia-et{display:inline-flex !important;align-items:center;gap:6px}
+.dia-con-ruta{display:inline-flex;color:var(--tinta-2)}
+.dia-con-ruta svg{width:14px;height:14px}
+.dia-resumen{display:block;width:100%;font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dia-chev{position:absolute;right:0;top:0;color:var(--tinta-2)}
+.dia-plan:not(.abierto) .dia-chev{top:50%;transform:translateY(-50%)}
+.dia-plan.abierto .dia-lista{margin-top:2px}
+.fecha-dia[data-a]{cursor:pointer}
 </style>
 
 </head>

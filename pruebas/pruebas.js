@@ -112,6 +112,8 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
 
   await prueba('Eliminar un día entero y deshacerlo', async () => {
     const antes = await A.locator('.dia-plan').count();
+    await A.click('.dia-plan >> nth=0 >> .dia-cab'); await A.waitForTimeout(200);
+    igual(await A.getAttribute('.dia-plan >> nth=0 >> .dia-cab', 'aria-expanded'), 'true', 'día desplegado');
     await A.click('.dia-plan >> nth=0 >> .borrar-dia'); await A.waitForTimeout(300);
     igual(await A.locator('.dia-plan').count(), antes - 1, 'tarjetas tras borrar');
     await A.click('#toast .deshacer'); await A.waitForTimeout(300);
