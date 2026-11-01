@@ -83,6 +83,13 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
     igual(await A.locator('.dia-plan .plan-item').count(), 2, 'planes en la tarjeta');
   });
 
+  await prueba('Importar un KML pone la ruta en cada día', async () => {
+    await A.click('.ruta-mini'); await A.click('[data-a="importarKml"]'); await A.setInputFiles('#kml', path.join(__dirname, 'ruta.kml')); await A.waitForTimeout(400);
+    await A.click('[data-a="guardarKml"]'); await A.waitForTimeout(400);
+    igual(await A.locator('.dia-plan .ruta-btn').count(), 2, 'rutas en las tarjetas');
+    igual(/google\.com\/maps\/dir/.test(await A.getAttribute('.ruta-btn >> nth=0', 'href')), true, 'enlace de Google Maps');
+  });
+
   await prueba('Artículos con el mismo nombre se marcan por separado', async () => {
     await A.click('.menu [data-a="maleta"]'); await A.waitForTimeout(300);
     await A.click('[data-a="plegar"] >> nth=0'); await A.click('[data-a="empezarItem"]'); await A.fill('#nuevo-item', 'Cargador'); await A.press('#nuevo-item', 'Enter'); await A.waitForTimeout(200);

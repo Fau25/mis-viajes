@@ -46,6 +46,7 @@ var IC = {
   tren: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3h8a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zM5 10h14M9 21l1.5-4M15 21l-1.5-4"/></svg>',
   bus: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v12H4V5a2 2 0 0 1 2-2zM4 11h16M7.5 17v3M16.5 17v3"/></svg>'
 };
+IC.ruta = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8.2 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.8" stroke-dasharray="2.2 2.4"/></svg>';
 IC.doc = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
 IC.chispa = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg>';
 IC.cama = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V6M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.8"/></svg>';
@@ -755,12 +756,14 @@ function renderViaje(){
   h += '<div class="cuerpo-viaje' + (enAlo ? ' ver-alo' : '') + '"><section class="sec-plan" aria-label="Itinerario">';
   var planes = (v.planes || []).slice().sort(function(x, y){ return x.dia - y.dia || (x.creado || 0) - (y.creado || 0); });
   var dias = {}; planes.forEach(function(p){ dias[p.dia] = true; });
-  h += '<div class="seccion" style="margin-top:4px"><span class="tit-ia"><h2>Itinerario</h2><button class="ia-mini" data-a="leerItinerario" aria-label="Leer un itinerario desde un documento" title="Leer itinerario de un documento">' + IC.chispa + '</button></span>' + (planes.length ? '<span class="suave num" style="font-size:14px">' + Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan</span>' : '') + '</div>';
+  h += '<div class="seccion" style="margin-top:4px"><span class="tit-ia"><h2>Itinerario</h2><button class="ia-mini" data-a="leerItinerario" aria-label="Leer un itinerario desde un documento" title="Leer itinerario de un documento">' + IC.chispa + '</button><button class="ia-mini ruta-mini" data-a="editarRuta" aria-label="Añadir rutas" title="Añadir rutas">' + IC.ruta + '</button></span>' + (planes.length ? '<span class="suave num" style="font-size:14px">' + Object.keys(dias).length + ' de ' + (n + 1) + ' días con plan</span>' : '') + '</div>';
   h += '<div style="display:flex;flex-direction:column;gap:10px">';
   var llegada = false;
   // Una tarjeta por día con todos sus planes dentro; cada plan se toca para editarlo
-  var porDia = [];
-  planes.forEach(function(p){ var g = porDia[porDia.length - 1]; if (g && g.dia === p.dia) g.planes.push(p); else porDia.push({dia: p.dia, planes: [p]}); });
+  var rutas = v.rutas || {}, mapaDias = {};
+  planes.forEach(function(p){ (mapaDias[p.dia] = mapaDias[p.dia] || []).push(p); });
+  Object.keys(rutas).forEach(function(d){ if (rutas[d] && rutas[d].url) mapaDias[d] = mapaDias[d] || []; });
+  var porDia = Object.keys(mapaDias).map(Number).sort(function(a, b){ return a - b; }).map(function(d){ return {dia: d, planes: mapaDias[d]}; });
   porDia.forEach(function(g){
     var d = diaFecha(v, g.dia);
     h += '<div class="plan dia-plan" role="group" aria-label="Día ' + g.dia + '"><div class="txt"><span class="suave dia-et">Día ' + g.dia + '</span><div class="dia-lista">';
@@ -770,6 +773,10 @@ function renderViaje(){
       h += '<button class="plan-item" data-a="editarPlan" data-id="' + esc(p.id) + '" aria-label="Editar plan: ' + esc(p.titulo) + '"><span class="lugar">' + esc(p.titulo) + '</span>' +
         (p.descripcion ? '<span class="desc">' + esc(p.descripcion) + '</span>' : '') + chip + '</button>';
     });
+    var ruta = rutas[g.dia];
+    if (ruta && ruta.url) h += '<div class="ruta-fila"><a class="ruta-btn" href="' + esc(ruta.url) + '" target="_blank" rel="noopener">' + IC.ruta + 'Ver ruta' + (ruta.paradas > 1 ? ' · ' + ruta.paradas + ' paradas' : '') + '</a>' +
+      '<button class="ruta-editar" data-a="editarRuta" data-dia="' + g.dia + '" aria-label="Cambiar la ruta del día ' + g.dia + '">' + IC.lapiz + '</button></div>';
+    else h += '<button class="ruta-anadir" data-a="editarRuta" data-dia="' + g.dia + '">' + IC.ruta + 'Añadir ruta</button>';
     h += '</div></div><span class="fecha-dia"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></div>';
   });
   if (!planes.length) h += '<button class="boton b-tinta" data-a="nuevoPlan" style="height:52px">' + IC.mas + 'Añadir itinerario</button>';
@@ -819,6 +826,8 @@ function renderHoja(){
   else if (t === 'alojamiento') h += hojaAlo();
   else if (t === 'leyendo') h += hojaLeyendo();
   else if (t === 'revisar') h += hojaRevisar();
+  else if (t === 'ruta') h += hojaRuta();
+  else if (t === 'kml') h += hojaKml();
   return h + '</div></div>';
 }
 function avisoLeido(){
@@ -895,6 +904,97 @@ function hojaDatos(t){
     '<p id="f-error" class="suave" style="margin:0;color:var(--rojo)" hidden></p>' +
     '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">' + (t === 'nuevo' ? 'Crear viaje' : 'Guardar') + '</button></div></form>';
   if (t === 'datos') h += '<button class="boton b-texto" data-a="borrarViaje">' + IC.basura + (S.confirmar ? 'Toca otra vez para eliminar el viaje' : 'Eliminar viaje') + '</button>';
+  return h;
+}
+/* ---------- Rutas por día ---------- */
+function opcionesDias(v, elegido){
+  var n = noches(v.inicio, v.fin) + 1, ops = '';
+  for (var i = 1; i <= n; i++) ops += '<option value="' + i + '"' + (i === elegido ? ' selected' : '') + '>Día ' + i + ' · ' + esc(fmt(diaFecha(v, i), {weekday: 'short', day: 'numeric', month: 'short'})) + '</option>';
+  return ops;
+}
+function hojaRuta(){
+  var v = viaje(), dia = S.hoja.dia || 1, ruta = (v.rutas || {})[dia] || {};
+  var h = cabHoja('Ruta del <span class="it">día</span>');
+  h += '<form data-f="ruta" style="display:flex;flex-direction:column;gap:14px" novalidate>' +
+    '<label class="campo-et" for="r-dia">Día<select class="campo" id="r-dia" name="dia">' + opcionesDias(v, dia) + '</select></label>' +
+    '<label class="campo-et" for="r-url">Enlace de la ruta<input class="campo" id="r-url" name="url" type="url" inputmode="url" autocapitalize="off" placeholder="https://maps.app.goo.gl/…" value="' + esc(ruta.url || '') + '"></label>' +
+    '<p class="suave" style="margin:-4px 0 0;font-size:14px;line-height:1.45">Pega el enlace de Google Maps (el de «Abrir ruta» o «Compartir»), de Wikiloc o de cualquier mapa.</p>' +
+    '<p id="f-error" style="margin:0;color:var(--rojo)" hidden></p>' +
+    '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">Guardar ruta</button></div></form>';
+  if (ruta.url) h += '<button class="boton b-texto" data-a="quitarRuta">' + IC.basura + 'Quitar la ruta de este día</button>';
+  h += '<div class="bloque-kml"><h2>¿Tienes las rutas de todo el viaje?</h2><p class="suave">Sube el archivo KML y se pondrá la ruta de cada día de una vez. También puede añadir las paradas como planes.</p>' +
+    '<button class="boton b-tinta" data-a="importarKml">' + IC.ruta + 'Importar archivo KML</button></div>';
+  return h;
+}
+/* KML: cada carpeta es un día («Día 3», «Etapa 3»… o en orden); sus puntos son las paradas */
+function textoKml(el, etiqueta){ var x = el.getElementsByTagName(etiqueta)[0]; return x ? String(x.textContent || '').trim() : ''; }
+function limpiarHtml(t){ return String(t || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n\s*/g, '\n').trim(); }
+function coordsKml(t){ return String(t || '').trim().split(/\s+/).map(function(c){ var p = c.split(','); return {lng: +p[0], lat: +p[1]}; }).filter(function(p){ return isFinite(p.lat) && isFinite(p.lng); }); }
+function leerKml(texto){
+  var doc = new DOMParser().parseFromString(texto, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length || !doc.getElementsByTagName('Placemark').length) return null;
+  var grupos = [];
+  var deGrupo = function(nombre, marcas, orden){
+    var m = /(d[ií]a|day|etapa|jornada)\s*(\d+)/i.exec(nombre || '');
+    var g = {nombre: nombre, dia: m ? +m[2] : orden, paradas: [], linea: []};
+    marcas.forEach(function(pm){
+      var punto = pm.getElementsByTagName('Point')[0], linea = pm.getElementsByTagName('LineString')[0];
+      if (punto) { var c = coordsKml(textoKml(punto, 'coordinates'))[0]; if (c) g.paradas.push({nombre: textoKml(pm, 'name') || 'Parada', desc: limpiarHtml(textoKml(pm, 'description')).slice(0, 600), lat: c.lat, lng: c.lng}); }
+      else if (linea) g.linea = g.linea.concat(coordsKml(textoKml(linea, 'coordinates')));
+    });
+    if (g.paradas.length || g.linea.length > 1) grupos.push(g);
+  };
+  var carpetas = Array.prototype.filter.call(doc.getElementsByTagName('Folder'), function(f){
+    return Array.prototype.some.call(f.children, function(c){ return c.tagName === 'Placemark'; });
+  });
+  if (carpetas.length) carpetas.forEach(function(f, i){
+    var nombre = ''; Array.prototype.forEach.call(f.children, function(c){ if (c.tagName === 'name') nombre = String(c.textContent || '').trim(); });
+    deGrupo(nombre, Array.prototype.filter.call(f.children, function(c){ return c.tagName === 'Placemark'; }), i + 1);
+  });
+  else {
+    var porDia = {}, sinDia = [];
+    Array.prototype.forEach.call(doc.getElementsByTagName('Placemark'), function(pm){
+      var m = /(d[ií]a|day|etapa)\s*(\d+)/i.exec(textoKml(pm, 'name'));
+      if (m) (porDia[m[2]] = porDia[m[2]] || []).push(pm); else sinDia.push(pm);
+    });
+    var claves = Object.keys(porDia);
+    if (claves.length) claves.forEach(function(k){ deGrupo('Día ' + k, porDia[k], +k); });
+    if (sinDia.length) deGrupo(textoKml(doc, 'name') || 'Ruta', sinDia, 1);
+  }
+  return grupos.length ? grupos : null;
+}
+function nombreSinDia(n){ return String(n || '').replace(/^\s*(d[ií]a|day|etapa|jornada)\s*\d+\s*[·:\-–—.,]?\s*/i, '').trim(); }
+function urlRuta(g, modo){
+  var pts = g.paradas.length >= 2 ? g.paradas : g.linea;
+  if (pts.length < 2 && g.paradas.length === 1) return 'https://www.google.com/maps/search/?api=1&query=' + g.paradas[0].lat + ',' + g.paradas[0].lng;
+  var c = function(p){ return p.lat.toFixed(6) + ',' + p.lng.toFixed(6); };
+  var medio = pts.slice(1, -1), max = 8, way = [];
+  for (var i = 0; i < Math.min(max, medio.length); i++) way.push(medio[Math.floor(i * medio.length / Math.min(max, medio.length))]);
+  return 'https://www.google.com/maps/dir/?api=1&origin=' + c(pts[0]) + '&destination=' + c(pts[pts.length - 1]) +
+    (way.length ? '&waypoints=' + encodeURIComponent(way.map(c).join('|')) : '') + '&travelmode=' + modo;
+}
+async function importarKml(file){
+  if (/\.kmz$/i.test(file.name)) { toast('Ese archivo es KMZ. Expórtalo como KML y vuelve a intentarlo.'); return; }
+  var grupos = null;
+  try { grupos = leerKml(await file.text()); } catch (e) {}
+  if (!grupos) { toast('No he encontrado rutas en ese archivo. Comprueba que sea un KML.'); return; }
+  abrirHoja({tipo: 'kml', grupos: grupos, modo: 'walking', conPlanes: true});
+}
+function hojaKml(){
+  var v = viaje(), n = noches(v.inicio, v.fin) + 1, gs = S.hoja.grupos;
+  var h = cabHoja('Rutas del <span class="it">viaje</span>');
+  h += '<p class="suave" style="margin:0;line-height:1.45">He encontrado ' + gs.length + (gs.length === 1 ? ' ruta' : ' rutas') + '. Cada una se pondrá en su día.</p><div class="rv-lista">';
+  gs.forEach(function(g){
+    var dia = Math.min(Math.max(1, g.dia), n), p = g.paradas;
+    h += '<div class="rv"><span class="rv-ic">' + IC.ruta + '</span><span class="rv-txt"><b>Día ' + dia + (nombreSinDia(g.nombre) ? ' · ' + esc(nombreSinDia(g.nombre)) : '') + '</b>' +
+      '<span class="suave">' + (p.length ? p.length + (p.length === 1 ? ' parada' : ' paradas') + (p.length > 1 ? ' · ' + esc(p[0].nombre) + ' → ' + esc(p[p.length - 1].nombre) : '') : 'Trazado de la ruta') + (g.dia > n ? ' · fuera de las fechas, va al último día' : '') + '</span></span></div>';
+  });
+  h += '</div><div class="campo-et">Cómo se recorre<div class="segm" role="radiogroup" aria-label="Cómo se recorre">';
+  [['walking', 'Andando'], ['driving', 'En coche'], ['bicycling', 'En bici'], ['transit', 'Transporte']].forEach(function(m){
+    h += '<span><input type="radio" name="modo" id="modo-' + m[0] + '" value="' + m[0] + '" data-a="modoKml"' + (S.hoja.modo === m[0] ? ' checked' : '') + '><label for="modo-' + m[0] + '">' + m[1] + '</label></span>';
+  });
+  h += '</div></div><label class="kml-planes"><input type="checkbox" id="kml-planes" data-a="planesKml"' + (S.hoja.conPlanes ? ' checked' : '') + '> Añadir las paradas como planes del itinerario</label>';
+  h += '<div class="acciones"><button class="boton b-borde" data-a="cerrar">Cancelar</button><button class="boton b-naranja" data-a="guardarKml">Guardar rutas</button></div>';
   return h;
 }
 function hojaPlan(){
@@ -1083,6 +1183,32 @@ var acciones = {
     var d = 1; while (ocupados[d] && d < total) d++;
     abrirHoja({tipo: 'plan', plan: {id: null, dia: d, titulo: '', descripcion: ''}});
   },
+  editarRuta: function(el){
+    var v = viaje(), d = el && el.dataset && el.dataset.dia ? +el.dataset.dia : 0;
+    if (!d) { var n = noches(v.inicio, v.fin) + 1, r = v.rutas || {}; d = 1; while (r[d] && r[d].url && d < n) d++; }
+    abrirHoja({tipo: 'ruta', dia: d});
+  },
+  quitarRuta: function(){
+    var antes = clone(viaje()), v = clone(antes); v.rutas = v.rutas || {}; delete v.rutas[S.hoja.dia];
+    guardar(v); cerrarHoja(); toastDeshacer('Ruta quitada', antes);
+  },
+  importarKml: function(){ var i = $('#kml'); i.value = ''; i.click(); },
+  guardarKml: function(){
+    var v = clone(viaje()), n = noches(v.inicio, v.fin) + 1, modo = S.hoja.modo, conPlanes = S.hoja.conPlanes, ya = {}, base = Date.now(), np = 0;
+    v.rutas = v.rutas || {}; v.planes = v.planes || [];
+    v.planes.forEach(function(p){ ya[p.dia + '|' + String(p.titulo).toLowerCase()] = 1; });
+    S.hoja.grupos.forEach(function(g, gi){
+      var dia = Math.min(Math.max(1, g.dia), n);
+      v.rutas[dia] = {url: urlRuta(g, modo), nombre: nombreSinDia(g.nombre), paradas: g.paradas.length};
+      if (conPlanes) g.paradas.forEach(function(p, i){
+        var c = dia + '|' + p.nombre.toLowerCase(); if (ya[c]) return; ya[c] = 1;
+        v.planes.push({id: nuevoId('p'), creado: base + gi * 100 + i, dia: dia, titulo: p.nombre.slice(0, 80), descripcion: p.desc}); np++;
+      });
+    });
+    var nr = S.hoja.grupos.length;
+    guardar(v); S.pestana = 'plan'; cerrarHoja();
+    toast((nr === 1 ? '1 ruta guardada' : nr + ' rutas guardadas') + (np ? ' y ' + np + (np === 1 ? ' plan añadido' : ' planes añadidos') : ''));
+  },
   editarPlan: function(el){
     var p = (viaje().planes || []).filter(function(x){ return x.id === el.dataset.id; })[0];
     if (p) abrirHoja({tipo: 'plan', plan: clone(p)});
@@ -1130,6 +1256,12 @@ app.addEventListener('change', function(e){
     render(); var again = document.getElementById(el.id); if (again) again.focus();
   } else if (el.id === 'foto' && el.files && el.files[0]) {
     subirFoto(el.files[0]);
+  } else if (el.id === 'r-dia' && S.hoja && S.hoja.tipo === 'ruta') {
+    S.hoja.dia = +el.value; render();
+  } else if (el.dataset && el.dataset.a === 'modoKml') {
+    S.hoja.modo = el.value;
+  } else if (el.id === 'kml-planes') {
+    S.hoja.conPlanes = el.checked;
   } else if (el.id === 'f-foto') {
     var tf = $('#f-foto-txt'); if (tf && el.files && el.files[0]) tf.textContent = el.files[0].name;
   } else if (el.name === 'tipo') {
@@ -1178,6 +1310,13 @@ app.addEventListener('submit', function(e){
       var fotoCambio = fd.get('foto');
       if (fotoCambio && fotoCambio.size) subirFoto(fotoCambio, v.id);
     }
+  } else if (tipo === 'ruta') {
+    var url = val('url'), diaR = parseInt(fd.get('dia'), 10) || 1;
+    if (!/^https?:\/\/\S+\.\S+/i.test(url)) return error('Pega un enlace que empiece por https://');
+    var vr = clone(viaje()); vr.rutas = vr.rutas || {};
+    var previa = vr.rutas[diaR] || {};
+    vr.rutas[diaR] = previa.url === url ? previa : {url: url};
+    guardar(vr); cerrarHoja(); toast('Ruta del día ' + diaR + ' guardada');
   } else if (tipo === 'plan') {
     var titulo = val('titulo');
     if (!titulo) return error('Escribe el lugar o la actividad.');
@@ -1226,6 +1365,7 @@ var tRedim;
 window.addEventListener('resize', function(){ clearTimeout(tRedim); tRedim = setTimeout(function(){ if (!S.hoja && S.vista === 'inicio') { colocarMazo(); actualizarFondo(true); } }, 120); });
 $('#importar').addEventListener('change', function(e){ var f = e.target.files && e.target.files[0]; if (f) importar(f); });
 $('#fondo-input').addEventListener('change', function(e){ var f = e.target.files && e.target.files[0]; if (f) cambiarFondo(f); });
+$('#kml').addEventListener('change', function(e){ var f = e.target.files && e.target.files[0]; if (f) importarKml(f); });
 $('#reserva').addEventListener('change', function(e){ var fs = e.target.files ? Array.prototype.slice.call(e.target.files, 0, 10) : []; if (fs.length) { if (S.leerModo === 'itinerario') procesarItinerario(fs); else procesarReserva(fs); } });
 
 /* ---------- leer reservas con IA ---------- */

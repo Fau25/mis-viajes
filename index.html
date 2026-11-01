@@ -379,6 +379,18 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 .plan-item:last-child{padding-bottom:2px}
 .plan-item .lugar{display:block;font-size:18px;font-weight:500;overflow-wrap:anywhere}
 @media (hover:hover){.plan-item:hover .lugar{color:var(--tinta-2)}}
+/* Rutas por día */
+.ruta-fila{display:flex;align-items:center;gap:8px;margin-top:12px}
+.ruta-btn{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--agua);color:var(--tinta);font-size:14px;font-weight:500;text-decoration:none}
+.ruta-editar{width:36px;height:36px;padding:0;border:none;border-radius:999px;background:transparent;color:var(--tinta-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.ruta-editar svg{width:16px;height:16px}
+.ruta-anadir{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 0 0;border:none;background:none;color:var(--tinta-2);font:inherit;font-size:13px;cursor:pointer}
+.ia-mini.ruta-mini{background:var(--tinta);color:#fff}
+.bloque-kml{margin-top:10px;padding-top:18px;border-top:1px solid var(--linea-2);display:flex;flex-direction:column;gap:10px}
+.bloque-kml h2{margin:0;font-size:17px;font-weight:500}
+.bloque-kml p{margin:0;font-size:14px;line-height:1.45}
+.kml-planes{display:flex;align-items:center;gap:10px;font-size:15px}
+.kml-planes input{width:20px;height:20px;accent-color:var(--tinta)}
 </style>
 
 </head>
@@ -388,6 +400,7 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 <noscript><p style="padding:24px;font-family:sans-serif">Mis viajes necesita JavaScript activado para funcionar.</p></noscript>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <input type="file" id="importar" accept="application/json,.json" hidden>
+<input type="file" id="kml" accept=".kml,application/vnd.google-earth.kml+xml,application/xml,text/xml" hidden>
 <input type="file" id="reserva" accept="application/pdf,.pdf,image/*" multiple hidden>
 <input type="file" id="fondo-input" accept="image/*" hidden>
 

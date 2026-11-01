@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>Camino de Santiago</name>
+  <Folder>
+    <name>Día 1 · Sarria</name>
+    <Placemark><name>Hotel Alfonso IX</name><description><![CDATA[Hotel.<br>Deja la maleta]]></description><Point><coordinates>-7.4148,42.7765,0</coordinates></Point></Placemark>
+    <Placemark><name>Iglesia de San Salvador</name><description>Primer sello de la credencial</description><Point><coordinates>-7.4185,42.7793,0</coordinates></Point></Placemark>
+    <Placemark><name>Fortaleza de Sarria</name><Point><coordinates>-7.4196,42.7799,0</coordinates></Point></Placemark>
+  </Folder>
+  <Folder>
+    <name>Día 2 · Portomarín</name>
+    <Placemark><name>Tramo del día</name><LineString><coordinates>-7.4196,42.7799,0 -7.5,42.8,0 -7.6158,42.8076,0</coordinates></LineString></Placemark>
+    <Placemark><name>Iglesia de San Nicolás</name><Point><coordinates>-7.6158,42.8076,0</coordinates></Point></Placemark>
+  </Folder>
+</Document>
+</kml>
