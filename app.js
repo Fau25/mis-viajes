@@ -1053,6 +1053,9 @@ function hojaMaleta(){
   var v = viaje(), m = v.maleta || maletaBase(), c = conteoMaleta(v);
   var pm = c.tot ? Math.round(c.he / c.tot * 100) : 0;
   var h = cabHoja('Maleta y <span class="it">tareas</span>');
+  if (S.hoja.preparando) h += '<div class="ia-maleta preparando" role="status"><span class="giro" aria-hidden="true"></span><span>Preparando tu maleta para ' + esc(v.titulo) + '…</span><button class="boton b-texto" data-a="cancelarMaleta">Cancelar</button></div>';
+  else h += '<div class="ia-maleta"><span class="ia-maleta-txt">' + (m.adaptada ? 'Lista adaptada a este viaje con IA.' : 'Adapta la lista al destino, las fechas y los planes de este viaje.') + '</span>' +
+    '<button class="boton b-naranja" data-a="prepararMaleta">' + IC.chispa + (m.adaptada ? 'Volver a adaptar' : 'Adaptar con IA') + '</button></div>';
   h += '<div class="maleta-cols"><div class="col-m">';
   h += '<div class="resumen-m"><div class="fila entre"><span class="etiq" style="color:var(--noche-2)">En la maleta</span><span class="num" style="font-size:14px;color:var(--noche-2)">' + pm + '% listo</span></div>' +
        '<div class="grande num">' + c.he + '<span style="font-size:18px;color:var(--noche-2)"> / ' + c.tot + ' artículos</span></div>' +
@@ -1189,6 +1192,8 @@ var acciones = {
     var d = 1; while (ocupados[d] && d < total) d++;
     abrirHoja({tipo: 'plan', plan: {id: null, dia: d, titulo: '', descripcion: ''}});
   },
+  prepararMaleta: function(){ prepararMaleta(); },
+  cancelarMaleta: function(){ if (pedidoMaleta) { pedidoMaleta.cancelada = true; try { pedidoMaleta.abort(); } catch (e) {} } },
   pegarFoto: function(){ imagenDelPortapapeles().then(function(b){ subirFoto(b); }).catch(avisoPegar); },
   pegarFotoForm: function(){ imagenDelPortapapeles().then(fotoPegadaEnFormulario).catch(avisoPegar); },
   editarRuta: function(el){
@@ -1404,6 +1409,50 @@ function mensajeError(res){
          'No se pudo leer la reserva. Revisa la conexión y vuelve a intentarlo.';
 }
 var lectura = {ctrl: null, cancelada: false};
+/* Maleta adaptada al viaje con IA: se envían solo los datos del viaje (sin documentos) */
+var pedidoMaleta = null;
+async function prepararMaleta(){
+  var v = viaje(); if (!v) return;
+  if (!claveIA()) { abrirHoja({tipo: 'copia'}); toast('Primero guarda la contraseña de la app.'); return; }
+  var tiposT = billetes(v).map(function(b){ return (TIPOS[b.tipo] || TIPOS.avion).nombre; });
+  var cuerpo = {modo: 'maleta', viaje: {
+    titulo: v.titulo, subtitulo: v.subtitulo, inicio: v.inicio, fin: v.fin, noches: noches(v.inicio, v.fin),
+    transporte: tiposT.filter(function(x, i){ return tiposT.indexOf(x) === i; }).join(', '),
+    alojamientos: (v.alojamientos || []).map(function(a){ return a.nombre; }),
+    planes: (v.planes || []).slice().sort(function(a, b){ return a.dia - b.dia; }).map(function(p){ return 'día ' + p.dia + ': ' + p.titulo; })
+  }};
+  S.hoja.preparando = true; render();
+  var ctrl = window.AbortController ? new AbortController() : null; pedidoMaleta = ctrl;
+  var tLimite = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 60000);
+  var res = {}, r = null;
+  try {
+    r = await fetch(CONSERJE, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Clave-App': claveIA()}, body: JSON.stringify(cuerpo), signal: ctrl ? ctrl.signal : undefined});
+    try { res = await r.json(); } catch (e) {}
+  } catch (e) { res = {error: ctrl && ctrl.cancelada ? 'cancelada' : 'red'}; }
+  clearTimeout(tLimite); pedidoMaleta = null;
+  var sigue = S.hoja && S.hoja.tipo === 'maleta' && S.viajeId === v.id;
+  if (sigue) S.hoja.preparando = false;
+  if (res.error === 'cancelada') { if (sigue) render(); return; }
+  if (r && r.status === 401) { abrirHoja({tipo: 'copia', errorClave: true}); return; }
+  var d = res.ok && res.datos, grupos = [];
+  if (d && Array.isArray(d.grupos)) d.grupos.slice(0, 10).forEach(function(g){
+    var nombre = String((g && g.nombre) || '').trim().slice(0, 40), vistos = {};
+    var items = (Array.isArray(g && g.items) ? g.items : []).map(function(x){ return String(x || '').trim().slice(0, 60); })
+      .filter(function(x){ var k = x.toLowerCase(); if (!x || vistos[k]) return false; vistos[k] = 1; return true; }).slice(0, 14);
+    if (nombre && items.length && !grupos.some(function(o){ return o.nombre === nombre; })) grupos.push({nombre: nombre, items: items});
+  });
+  var tareas = d && Array.isArray(d.tareas) ? d.tareas.map(function(x){ return String(x || '').trim().slice(0, 80); }).filter(Boolean).slice(0, 10) : [];
+  if (!grupos.length) { if (sigue) render(); toast(res.error ? mensajeError(res) : 'No se pudo preparar la lista. Vuelve a intentarlo.'); return; }
+  // Se conserva lo que ya estaba marcado si el artículo sigue en la lista nueva
+  var antes = clone(viaje(v.id)), nv = clone(antes), vieja = nv.maleta || maletaBase();
+  var nueva = {grupos: grupos, tareas: tareas.length ? tareas : vieja.tareas, marcados: {}, marcasV2: true, adaptada: true};
+  nueva.grupos.forEach(function(g){ g.items.forEach(function(it){ if (marcado(vieja, g.nombre, it)) nueva.marcados[claveMarca(g.nombre, it)] = true; }); });
+  nueva.tareas.forEach(function(t){ if (marcado(vieja, '__tareas', t)) nueva.marcados[claveMarca('__tareas', t)] = true; });
+  nv.maleta = nueva; guardar(nv);
+  if (sigue) { var cerr = {'__tareas': true}; grupos.forEach(function(g){ cerr[g.nombre] = true; }); S.cerrados = cerr; render(); }
+  var total = 0; grupos.forEach(function(g){ total += g.items.length; });
+  toastDeshacer('Maleta adaptada: ' + total + ' artículos y ' + nueva.tareas.length + ' tareas', antes);
+}
 async function leerUno(file, extra){
   var esPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
   if (esPdf && file.size > 10 * 1024 * 1024) return {error: 'El PDF «' + file.name + '» pesa más de 10 MB.'};

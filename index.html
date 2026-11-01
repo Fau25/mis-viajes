@@ -401,6 +401,14 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 .barra-der{display:flex;gap:10px}
 .fila-foto{display:grid;grid-template-columns:1fr auto;gap:8px}
 .fila-foto .boton{display:flex;align-items:center;justify-content:center;gap:8px}
+/* Maleta adaptada con IA */
+.ia-maleta{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--melocoton);border-radius:20px;padding:12px 12px 12px 16px}
+.ia-maleta-txt{flex:1;min-width:180px;font-size:14px;line-height:1.4}
+.ia-maleta .boton{width:auto;height:44px;padding:0 16px;display:inline-flex;align-items:center;gap:8px}
+.ia-maleta.preparando{justify-content:flex-start;flex-wrap:nowrap;font-size:14px}
+.ia-maleta.preparando > span:nth-child(2){flex:1;min-width:0}
+.ia-maleta.preparando .giro{width:20px;height:20px;flex-shrink:0}
+.ia-maleta.preparando .boton{margin-left:auto;height:36px}
 </style>
 
 </head>

@@ -25,7 +25,17 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
   const URL_APP = 'http://localhost:' + servidor.address().port + '/';
   const fs2 = require('fs'); fs2.copyFileSync(path.join(RAIZ, 'conserje', 'worker.js'), path.join(__dirname, 'worker.mjs'));
   const conserje = (await import(path.join(__dirname, 'worker.mjs'))).default;
-  const env = { CLAVE_APP: 'clave-de-prueba', VIAJES: crearKV(), DB: crearD1() };
+  const env = { CLAVE_APP: 'clave-de-prueba', ANTHROPIC_API_KEY: 'clave-falsa', VIAJES: crearKV(), DB: crearD1() };
+  // La IA se simula: el conserje real llama a esta función en lugar de a Anthropic
+  const fetchReal = globalThis.fetch;
+  globalThis.fetch = async (url, op) => {
+    if (!String(url).includes('api.anthropic.com')) return fetchReal(url, op);
+    const pedido = JSON.parse(op.body), herramienta = pedido.tool_choice.name;
+    const entrada = herramienta === 'guardar_maleta'
+      ? { grupos: [{ nombre: 'Documentos', items: ['DNI', 'Credencial del peregrino'] }, { nombre: 'Camino', items: ['Mochila de 30 L', 'Chubasquero', 'Crema para los pies'] }], tareas: ['Sellar la credencial en Sarria', 'Cerrar el agua'] }
+      : {};
+    return new Response(JSON.stringify({ content: [{ type: 'tool_use', name: herramienta, input: entrada }] }), { status: 200 });
+  };
   const navegador = await chromium.launch();
   const errores = [];
 
@@ -106,6 +116,16 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
     igual(await A.locator('.dia-plan').count(), antes - 1, 'tarjetas tras borrar');
     await A.click('#toast .deshacer'); await A.waitForTimeout(300);
     igual(await A.locator('.dia-plan').count(), antes, 'tarjetas tras deshacer');
+  });
+
+  await prueba('Adaptar la maleta con IA', async () => {
+    await A.click('.menu [data-a="maleta"]'); await A.waitForTimeout(300);
+    await A.click('[data-a="prepararMaleta"]'); await A.waitForTimeout(1200);
+    igual(await A.evaluate(() => Array.from(document.querySelectorAll('.grupo-cab .nom')).map(e => e.textContent)), ['Documentos', 'Camino', 'Antes de salir'], 'grupos');
+    igual(/Maleta adaptada: 5 artículos y 2 tareas/.test(await A.textContent('#toast')), true, 'aviso');
+    await A.click('#toast .deshacer'); await A.waitForTimeout(300);
+    igual(await A.locator('.grupo-cab').count(), 8, 'lista base tras deshacer');
+    await A.click('[data-a="cerrar"]'); await A.waitForTimeout(300);
   });
 
   await prueba('Artículos con el mismo nombre se marcan por separado', async () => {

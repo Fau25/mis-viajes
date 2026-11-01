@@ -74,6 +74,71 @@ const HERRAMIENTA = {
   }
 };
 
+const HERRAMIENTA_MALETA = {
+  name: 'guardar_maleta',
+  description: 'Guarda la lista de equipaje y las tareas antes de salir, adaptadas al viaje.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      grupos: {
+        type: 'array',
+        description: 'Entre 5 y 9 grupos (ej. Documentos, Ropa, Aseo, Salud, Electrónica, Dinero, y otros propios del viaje)',
+        items: {
+          type: 'object',
+          properties: {
+            nombre: { type: 'string', description: 'Nombre corto del grupo' },
+            items: { type: 'array', items: { type: 'string' }, description: 'Entre 2 y 10 artículos, nombres cortos (máx. 40 caracteres)' }
+          },
+          required: ['nombre', 'items']
+        }
+      },
+      tareas: { type: 'array', items: { type: 'string' }, description: 'Entre 4 y 8 tareas para hacer antes de salir de casa' }
+    },
+    required: ['grupos', 'tareas']
+  }
+};
+
+// Lista de maleta adaptada al viaje (solo texto, sin documento)
+async function prepararMaleta(datos, env, cors) {
+  const t = function (x, n) { return String(x == null ? '' : x).slice(0, n); };
+  const v = datos.viaje || {};
+  const lineas = [
+    'Destino: ' + t(v.titulo, 80) + (v.subtitulo ? ' (' + t(v.subtitulo, 80) + ')' : ''),
+    'Fechas: del ' + t(v.inicio, 10) + ' al ' + t(v.fin, 10) + ' (' + (Number(v.noches) || 0) + ' noches)',
+    v.transporte ? 'Transporte: ' + t(v.transporte, 120) : '',
+    Array.isArray(v.alojamientos) && v.alojamientos.length ? 'Alojamiento: ' + v.alojamientos.slice(0, 6).map(function (x) { return t(x, 60); }).join('; ') : '',
+    Array.isArray(v.planes) && v.planes.length ? 'Planes del itinerario: ' + v.planes.slice(0, 40).map(function (x) { return t(x, 70); }).join('; ') : ''
+  ].filter(Boolean).join('\n');
+  const instrucciones =
+    'Prepara la lista de maleta y las tareas antes de salir para este viaje, y guárdala con la herramienta guardar_maleta.\n' + lineas + '\n' +
+    'Ten en cuenta el clima típico del destino en esas fechas, la duración, el transporte (por ejemplo, líquidos en cabina si es avión) y las actividades de los planes ' +
+    '(por ejemplo, si es el Camino de Santiago: mochila, credencial, calzado ya usado, cuidado de pies). ' +
+    'El primer grupo es Documentos. Artículos concretos y cortos, sin cantidades ni explicaciones, sin repetir. Escribe en español.';
+  let r;
+  try {
+    r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: env.MODELO || MODELO_POR_DEFECTO,
+        max_tokens: 2000,
+        tools: [HERRAMIENTA_MALETA],
+        tool_choice: { type: 'tool', name: 'guardar_maleta' },
+        messages: [{ role: 'user', content: instrucciones }]
+      })
+    });
+  } catch (e) { return respuesta({ error: 'sin_conexion_ia' }, 502, cors); }
+  if (!r.ok) {
+    let detalle = '';
+    try { const j = await r.json(); detalle = (j.error && j.error.message) || ''; } catch (e) {}
+    return respuesta({ error: 'ia', estado: r.status, detalle: detalle.slice(0, 300) }, 502, cors);
+  }
+  const resultado = await r.json();
+  const uso = (resultado.content || []).find(function (c) { return c.type === 'tool_use'; });
+  if (!uso) return respuesta({ error: 'sin_datos' }, 422, cors);
+  return respuesta({ ok: true, datos: uso.input || {} }, 200, cors);
+}
+
 const HERRAMIENTA_ITINERARIO = {
   name: 'guardar_itinerario',
   description: 'Guarda los planes del itinerario de viaje que aparecen en el documento.',
@@ -281,6 +346,7 @@ export default {
 
     let datos;
     try { datos = await request.json(); } catch (e) { return respuesta({ error: 'formato' }, 400, cors); }
+    if (datos && datos.modo === 'maleta') return await prepararMaleta(datos, env, cors);
     const archivo = datos && datos.archivo;
     const tipo = datos && datos.tipo;
     if (!archivo || !tipo) return respuesta({ error: 'formato' }, 400, cors);
