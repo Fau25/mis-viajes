@@ -978,6 +978,7 @@ function urlRuta(g, modo){
 }
 async function importarKml(file){
   if (/\.kmz$/i.test(file.name)) { toast('Ese archivo es KMZ. Expórtalo como KML y vuelve a intentarlo.'); return; }
+  if (file.size > 15 * 1024 * 1024) { toast('Ese archivo es demasiado grande para ser un KML.'); return; }
   var grupos = null;
   try { grupos = leerKml(await file.text()); } catch (e) {}
   if (!grupos) { toast('No he encontrado rutas en ese archivo. Comprueba que sea un KML.'); return; }
