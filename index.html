@@ -381,7 +381,7 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 @media (hover:hover){.plan-item:hover .lugar{color:var(--tinta-2)}}
 /* Rutas por día */
 .ruta-fila{display:flex;align-items:center;gap:8px;margin-top:12px}
-.ruta-btn{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 14px;border-radius:999px;background:var(--agua);color:var(--tinta);font-size:14px;font-weight:500;text-decoration:none}
+.ruta-btn{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;min-height:36px;padding:0 14px;border-radius:999px;background:var(--agua);color:var(--tinta);font-size:14px;font-weight:500;text-decoration:none}
 .ruta-editar{width:36px;height:36px;padding:0;border:none;border-radius:999px;background:transparent;color:var(--tinta-2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .ruta-editar svg{width:16px;height:16px}
 .ruta-anadir{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 0 0;border:none;background:none;color:var(--tinta-2);font:inherit;font-size:13px;cursor:pointer}
@@ -391,6 +391,12 @@ html.en-inicio .inicio .vacio{color:var(--tinta)}
 .bloque-kml p{margin:0;font-size:14px;line-height:1.45}
 .kml-planes{display:flex;align-items:center;gap:10px;font-size:15px}
 .kml-planes input{width:20px;height:20px;accent-color:var(--tinta)}
+/* Pie de la tarjeta de día: ruta a la izquierda, borrar el día a la derecha */
+.dia-pie{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dia-pie .ruta-fila,.dia-pie .ruta-anadir{margin-top:10px}
+.borrar-dia{width:36px;height:36px;margin-top:10px;margin-right:-6px;padding:0;border:none;border-radius:999px;background:transparent;color:var(--tinta-3);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.borrar-dia svg{width:17px;height:17px}
+@media (hover:hover){.borrar-dia:hover{color:var(--rojo);background:rgba(162,59,42,.08)}}
 </style>
 
 </head>

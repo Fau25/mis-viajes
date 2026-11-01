@@ -90,6 +90,14 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
     igual(/google\.com\/maps\/dir/.test(await A.getAttribute('.ruta-btn >> nth=0', 'href')), true, 'enlace de Google Maps');
   });
 
+  await prueba('Eliminar un día entero y deshacerlo', async () => {
+    const antes = await A.locator('.dia-plan').count();
+    await A.click('.dia-plan >> nth=0 >> .borrar-dia'); await A.waitForTimeout(300);
+    igual(await A.locator('.dia-plan').count(), antes - 1, 'tarjetas tras borrar');
+    await A.click('#toast .deshacer'); await A.waitForTimeout(300);
+    igual(await A.locator('.dia-plan').count(), antes, 'tarjetas tras deshacer');
+  });
+
   await prueba('Artículos con el mismo nombre se marcan por separado', async () => {
     await A.click('.menu [data-a="maleta"]'); await A.waitForTimeout(300);
     await A.click('[data-a="plegar"] >> nth=0'); await A.click('[data-a="empezarItem"]'); await A.fill('#nuevo-item', 'Cargador'); await A.press('#nuevo-item', 'Enter'); await A.waitForTimeout(200);

@@ -775,9 +775,11 @@ function renderViaje(){
         (p.descripcion ? '<span class="desc">' + esc(p.descripcion) + '</span>' : '') + chip + '</button>';
     });
     var ruta = rutas[g.dia];
+    h += '<div class="dia-pie">';
     if (ruta && ruta.url) h += '<div class="ruta-fila"><a class="ruta-btn" href="' + esc(ruta.url) + '" target="_blank" rel="noopener">' + IC.ruta + 'Ver ruta' + (ruta.paradas > 1 ? ' · ' + ruta.paradas + ' paradas' : '') + '</a>' +
       '<button class="ruta-editar" data-a="editarRuta" data-dia="' + g.dia + '" aria-label="Cambiar la ruta del día ' + g.dia + '">' + IC.lapiz + '</button></div>';
     else h += '<button class="ruta-anadir" data-a="editarRuta" data-dia="' + g.dia + '">' + IC.ruta + 'Añadir ruta</button>';
+    h += '<button class="borrar-dia" data-a="borrarDia" data-dia="' + g.dia + '" aria-label="Eliminar el día ' + g.dia + ' entero">' + IC.basura + '</button></div>';
     h += '</div></div><span class="fecha-dia"><span class="s">' + esc(fmt(d, {weekday: 'short'}).toUpperCase()) + '</span><span class="n num">' + d.getDate() + '</span><span class="m">' + esc(fmt(d, {month: 'short'}).toUpperCase()) + '</span></span></div>';
   });
   if (!planes.length) h += '<button class="boton b-tinta" data-a="nuevoPlan" style="height:52px">' + IC.mas + 'Añadir itinerario</button>';
@@ -1188,6 +1190,14 @@ var acciones = {
     var v = viaje(), d = el && el.dataset && el.dataset.dia ? +el.dataset.dia : 0;
     if (!d) { var n = noches(v.inicio, v.fin) + 1, r = v.rutas || {}; d = 1; while (r[d] && r[d].url && d < n) d++; }
     abrirHoja({tipo: 'ruta', dia: d});
+  },
+  borrarDia: function(el){
+    var dia = +el.dataset.dia, antes = clone(viaje()), v = clone(antes);
+    var n = (v.planes || []).filter(function(p){ return p.dia === dia; }).length;
+    v.planes = (v.planes || []).filter(function(p){ return p.dia !== dia; });
+    if (v.rutas) delete v.rutas[dia];
+    guardar(v); render();
+    toastDeshacer('Día ' + dia + ' eliminado' + (n ? ' (' + n + (n === 1 ? ' plan)' : ' planes)') : ''), antes);
   },
   quitarRuta: function(){
     var antes = clone(viaje()), v = clone(antes); v.rutas = v.rutas || {}; delete v.rutas[S.hoja.dia];
