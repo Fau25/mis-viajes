@@ -423,6 +423,7 @@ function abrirHoja(h){
 function cerrarHoja(){
   S.hoja = null; S.anadiendo = null; S.borrador = ''; S.confirmar = false; S.pendienteRender = false;
   render(); try { window.scrollTo(0, 0); } catch (e) {}
+  if (S.recargarAlCerrar) setTimeout(function(){ location.reload(); }, 600);
 }
 
 /* ---------- render ---------- */
@@ -1583,6 +1584,17 @@ async function subirFoto(file, idViaje){
 render();
 iniciar();
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  // Actualización automática: al volver a la app se busca una versión nueva y, cuando se instala, se recarga sola
+  // (si hay una ventana abierta con algo a medio escribir, espera a que se cierre).
+  var habiaVersion = !!navigator.serviceWorker.controller;
+  var recargar = function(){ if (S.hoja) { S.recargarAlCerrar = true; return; } location.reload(); };
+  navigator.serviceWorker.addEventListener('controllerchange', function(){ if (habiaVersion) recargar(); habiaVersion = true; });
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      document.addEventListener('visibilitychange', function(){ if (!document.hidden) reg.update().catch(function(){}); });
+      setInterval(function(){ if (!document.hidden) reg.update().catch(function(){}); }, 30 * 60 * 1000);
+    }).catch(function(){});
+  });
+
 }
 })();
