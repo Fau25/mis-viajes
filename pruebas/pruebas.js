@@ -31,6 +31,7 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
 
   async function dispositivo(ancho, alto) {
     const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto } });
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: URL_APP.replace(/\/$/, '') });
     await ctx.route(u => String(u).includes('workers.dev'), async ruta => {
       const rq = ruta.request();
       const sinCuerpo = rq.method() === 'GET' || rq.method() === 'OPTIONS';
@@ -57,6 +58,15 @@ function igual(a, b, que) { if (JSON.stringify(a) !== JSON.stringify(b)) throw n
     await A.click('[data-a="nuevo"]'); await A.fill('#f-titulo', 'Roma'); await A.fill('#f-ini', '2030-12-10'); await A.fill('#f-fin', '2030-12-16');
     await A.setInputFiles('#f-foto', path.join(__dirname, 'foto.jpg')); await A.click('button[type=submit]'); await A.waitForTimeout(1200);
     igual(await A.locator('.carta').count(), 1, 'cartas');
+  });
+
+  await prueba('Pegar una foto copiada en la cabecera', async () => {
+    await A.click('.carta.activa .carta-abrir'); await A.waitForTimeout(400);
+    const antes = await A.getAttribute('.cabecera img.fondo', 'src');
+    await A.evaluate(async () => { const c = document.createElement('canvas'); c.width = 600; c.height = 400; c.getContext('2d').fillRect(0, 0, 600, 400); const b = await new Promise(ok => c.toBlob(ok, 'image/png')); await navigator.clipboard.write([new ClipboardItem({'image/png': b})]); });
+    await A.click('[data-a="pegarFoto"]'); await A.waitForTimeout(1200);
+    igual(antes !== await A.getAttribute('.cabecera img.fondo', 'src'), true, 'foto cambiada');
+    await A.click('[data-a="inicio"]'); await A.waitForTimeout(300);
   });
 
   await prueba('El texto se escapa (sin inyección de código)', async () => {

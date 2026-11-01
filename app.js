@@ -51,6 +51,7 @@ IC.doc = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="cu
 IC.chispa = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg>';
 IC.cama = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18V6M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.8"/></svg>';
 IC.casa = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></svg>';
+IC.pegar = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V4a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 4v.5"/><path d="M9 12.5l2.2 2.2L15.5 10"/></svg>';
 IC.copiar = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
 IC.flechaP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>';
 var CONSERJE = 'https://mis-viajes-ia.fgstrash.workers.dev';
@@ -717,7 +718,7 @@ function renderViaje(){
   else h += '<svg class="fondo" viewBox="0 0 390 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="290" cy="140" r="58" fill="#F07F2E" opacity=".85"/><path d="M0 330 L120 210 L200 290 L260 240 L390 350 L390 480 L0 480 Z" fill="#24404A"/><path d="M0 380 L90 320 L170 370 L270 300 L390 390 L390 480 L0 480 Z" fill="#1A3039"/></svg>';
   h += '<div class="velo"></div>';
   h += '<div class="barra"><button class="circ vidrio" data-a="inicio" aria-label="Volver a mis viajes">' + IC.atras + '</button>';
-  if (assets) h += '<label class="circ vidrio" style="position:relative;cursor:pointer" aria-label="Cambiar foto de portada"><input type="file" accept="image/*" id="foto" style="position:absolute;width:1px;height:1px;opacity:0">' + IC.camara + '</label>';
+  if (assets) h += '<div class="barra-der"><button class="circ vidrio" data-a="pegarFoto" aria-label="Pegar foto de portada desde el portapapeles" title="Pegar foto">' + IC.pegar + '</button><label class="circ vidrio" style="position:relative;cursor:pointer" aria-label="Cambiar foto de portada"><input type="file" accept="image/*" id="foto" style="position:absolute;width:1px;height:1px;opacity:0">' + IC.camara + '</label></div>';
   h += '</div>';
   if (S.subiendo) h += '<div class="subiendo" role="status">Subiendo foto…</div>';
   h += '<div class="contenido"><div class="cab-titulo"><div style="min-width:0"><h1 class="t1x">' + esc(v.titulo) + '</h1>' +
@@ -902,7 +903,8 @@ function hojaDatos(t){
     '<div class="dos"><label class="campo-et" for="f-ini">Ida<input class="campo" type="date" id="f-ini" name="inicio" value="' + esc(v.inicio) + '" required></label>' +
     '<label class="campo-et" for="f-fin">Vuelta<input class="campo" type="date" id="f-fin" name="fin" value="' + esc(v.fin) + '" required></label></div>' +
     '<div class="dato"><span class="suave">Duración</span><span id="f-dur" style="font-weight:600;text-align:right">' + esc(duracionTexto(v.inicio, v.fin)) + '</span></div>' +
-    (assets ? '<div class="campo-et">Foto del viaje<label class="boton b-borde" for="f-foto" style="font-weight:500;cursor:pointer">' + IC.camara + '<span id="f-foto-txt">' + (v.fotoId ? 'Cambiar foto' : 'Elegir foto') + '</span></label>' +
+    (assets ? '<div class="campo-et">Foto del viaje<div class="fila-foto"><label class="boton b-borde" for="f-foto" style="font-weight:500;cursor:pointer">' + IC.camara + '<span id="f-foto-txt">' + (S.hoja.fotoPegada ? 'Foto pegada' : v.fotoId ? 'Cambiar foto' : 'Elegir foto') + '</span></label>' +
+      '<button type="button" class="boton b-borde" data-a="pegarFotoForm" style="font-weight:500">' + IC.pegar + 'Pegar</button></div>' +
       '<input type="file" id="f-foto" name="foto" accept="image/*" hidden><span class="suave" style="font-size:13px;font-weight:400">Se verá en la cabecera del viaje y de fondo en el inicio.</span></div>' : '') +
     '<p id="f-error" class="suave" style="margin:0;color:var(--rojo)" hidden></p>' +
     '<div class="acciones"><button type="button" class="boton b-borde" data-a="cerrar">Cancelar</button><button type="submit" class="boton b-naranja">' + (t === 'nuevo' ? 'Crear viaje' : 'Guardar') + '</button></div></form>';
@@ -1187,6 +1189,8 @@ var acciones = {
     var d = 1; while (ocupados[d] && d < total) d++;
     abrirHoja({tipo: 'plan', plan: {id: null, dia: d, titulo: '', descripcion: ''}});
   },
+  pegarFoto: function(){ imagenDelPortapapeles().then(function(b){ subirFoto(b); }).catch(avisoPegar); },
+  pegarFotoForm: function(){ imagenDelPortapapeles().then(fotoPegadaEnFormulario).catch(avisoPegar); },
   editarRuta: function(el){
     var v = viaje(), d = el && el.dataset && el.dataset.dia ? +el.dataset.dia : 0;
     if (!d) { var n = noches(v.inicio, v.fin) + 1, r = v.rutas || {}; d = 1; while (r[d] && r[d].url && d < n) d++; }
@@ -1275,7 +1279,7 @@ app.addEventListener('change', function(e){
   } else if (el.id === 'kml-planes') {
     S.hoja.conPlanes = el.checked;
   } else if (el.id === 'f-foto') {
-    var tf = $('#f-foto-txt'); if (tf && el.files && el.files[0]) tf.textContent = el.files[0].name;
+    var tf = $('#f-foto-txt'); if (tf && el.files && el.files[0]) { tf.textContent = el.files[0].name; if (S.hoja) S.hoja.fotoPegada = null; }
   } else if (el.name === 'tipo') {
     var tx = TIPOS[el.value];
     document.querySelectorAll('[data-l="numero"]').forEach(function(s){ s.textContent = tx.etNumero; });
@@ -1297,6 +1301,7 @@ app.addEventListener('submit', function(e){
   var val = function(k){ return String(fd.get(k) || '').trim(); };
   var error = function(t){ var p = $('#f-error'); if (p) { p.textContent = t; p.hidden = false; } };
   if (tipo === 'datos') {
+    var pegada = S.hoja && S.hoja.fotoPegada;
     var d = {titulo: val('titulo'), subtitulo: val('subtitulo'), inicio: val('inicio'), fin: val('fin')};
     if (!d.titulo) return error('Escribe un título para el viaje.');
     if (!d.inicio || !d.fin) return error('Elige la fecha de ida y la de vuelta.');
@@ -1307,7 +1312,7 @@ app.addEventListener('submit', function(e){
       ponerBilletes(nv, pend.billetes || (pend.transporte ? [pend.transporte] : []));
       guardar(nv);
       var fotoNueva = fd.get('foto');
-      if (fotoNueva && fotoNueva.size) subirFoto(fotoNueva, nv.id);
+      if (fotoNueva && fotoNueva.size) subirFoto(fotoNueva, nv.id); else if (pegada) subirFoto(pegada, nv.id);
       var lista = pendientes(); var pos = lista.findIndex(function(x){ return x.id === nv.id; });
       S.activo = pos < 0 ? 0 : pos;
       irA('inicio');
@@ -1320,7 +1325,7 @@ app.addEventListener('submit', function(e){
       guardar(v); cerrarHoja();
       if (movidos) toast(movidos === 1 ? '1 plan pasado al último día del viaje' : movidos + ' planes pasados al último día del viaje');
       var fotoCambio = fd.get('foto');
-      if (fotoCambio && fotoCambio.size) subirFoto(fotoCambio, v.id);
+      if (fotoCambio && fotoCambio.size) subirFoto(fotoCambio, v.id); else if (pegada) subirFoto(pegada, v.id);
     }
   } else if (tipo === 'ruta') {
     var url = val('url'), diaR = parseInt(fd.get('dia'), 10) || 1;
@@ -1571,6 +1576,35 @@ function reducir(file){
     img.src = url;
   });
 }
+/* Pegar una imagen copiada (sin tener que descargarla) */
+async function imagenDelPortapapeles(){
+  if (!navigator.clipboard || !navigator.clipboard.read) throw {code: 'sin_api'};
+  var items = await navigator.clipboard.read();
+  for (var i = 0; i < items.length; i++) {
+    var tipo = items[i].types.filter(function(t){ return /^image\//.test(t); })[0];
+    if (tipo) return await items[i].getType(tipo);
+  }
+  throw {code: 'sin_imagen'};
+}
+function avisoPegar(e){
+  var c = e && (e.code || e.name);
+  toast(c === 'sin_imagen' ? 'No hay ninguna imagen copiada. Mantén pulsada una foto, toca «Copiar» y vuelve a intentarlo.' :
+        c === 'sin_api' ? 'Este navegador no deja pegar con un botón. Prueba con Ctrl+V (o Cmd+V).' :
+        c === 'NotAllowedError' ? 'Para pegar, toca «Pegar» en el aviso que aparece.' : 'No se pudo pegar la imagen.');
+}
+function fotoPegadaEnFormulario(blob){
+  S.hoja.fotoPegada = blob;
+  var tf = $('#f-foto-txt'); if (tf) tf.textContent = 'Foto pegada';
+  var inp = $('#f-foto'); if (inp) inp.value = '';
+  toast('Foto pegada. Se guardará con el viaje.');
+}
+document.addEventListener('paste', function(e){
+  var it = Array.prototype.filter.call((e.clipboardData && e.clipboardData.items) || [], function(x){ return x.kind === 'file' && /^image\//.test(x.type); })[0];
+  if (!it || !assets) return;
+  var blob = it.getAsFile(); if (!blob) return;
+  if (S.hoja && (S.hoja.tipo === 'nuevo' || S.hoja.tipo === 'datos')) { e.preventDefault(); fotoPegadaEnFormulario(blob); }
+  else if (!S.hoja && S.vista === 'viaje') { e.preventDefault(); subirFoto(blob); }
+});
 async function subirFoto(file, idViaje){
   if (!assets) return;
   var id = idViaje || S.viajeId;

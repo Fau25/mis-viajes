@@ -1,5 +1,5 @@
 // Mis viajes: funciona sin conexión. Cambia VERSION al publicar cambios.
-const VERSION = 'mis-viajes-v29';
+const VERSION = 'mis-viajes-v30';
 const BASE = [
   './', './index.html', './app.js', './manifest.webmanifest',
   './icons/apple-touch-icon.png', './icons/icon-192.png', './icons/icon-512.png',
